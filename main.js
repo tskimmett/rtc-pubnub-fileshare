@@ -10,6 +10,7 @@ var pubnub = PUBNUB.init({
 function FSClient() {
 	this.isInitiator = false;
 	this.uuid = pubnub.uuid();
+	this.fileName = null;
 	this.buffer = null;
 	this.chunkSize = 800;
 	this.fileChunks = [];
@@ -64,7 +65,10 @@ FSClient.prototype = {
 			//console.log("Local ICE candidate found.");
 			pubnub.publish({
 				channel: CHANNEL,
-				message: { candidate: e.candidate }
+				message: {
+					uuid: self.uuid,
+					candidate: e.candidate
+				}
 			});
 		};
 		this.dataChannelCreated = function (e) {
@@ -82,13 +86,13 @@ FSClient.prototype = {
 			});
 
 			// Send session description over wire via PubNub
-			// If we are the source, then the message indicates we are ready to send.
-			// Otherwise it indicates we are ready to receive data.
 			pubnub.publish({
 				channel: CHANNEL,
 				message: {
 					uuid: self.uuid,
-					desc: sessionDesc
+					desc: sessionDesc,
+					fName: self.fileName,
+					fType: self.fileType
 				}
 			});
 		};
@@ -105,13 +109,14 @@ FSClient.prototype = {
 		this.onChannelMessage = function (msg) {
 			console.log("vvv DataChannel msg vvv");
 			console.log(msg);
+			self.fileChunks.push(Base64Binary.decode(msg.data));
 		};
 
 		this.onChannelReadyStateChange = function (e) {
 			console.log("Channel state: " + e.type);
 			if (e.type == "open") {
 				// Ready to communicate data now
-				self.beginTransfer();
+				self.beginDataTransfer();
 			}
 		};
 	},
@@ -123,7 +128,7 @@ FSClient.prototype = {
 		console.log("DataChannel events registered.");
 	},
 
-	stageFileData: function (buffer) {
+	stageFileData: function (fName, fType, buffer) {
 		this.buffer = buffer;
 		var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
 		this.fileChunks = new Array(nChunks);
@@ -132,21 +137,41 @@ FSClient.prototype = {
 			start = i * this.chunkSize;
 			this.fileChunks[i] = buffer.slice(start, start + this.chunkSize);
 		}
+		this.fileName = fName;
+		this.fileType = fType;
 		document.querySelector("#shareFile").disabled = "";
 		console.log("File data staged");
 	},
 
-	beginTransfer: function () {
+	prepareFileDownload: function() {
+		var blob = new Blob(this.fileChunks, { type: this.fileType });
+		var link = document.querySelector("#download");
+		link.href = window.URL.createObjectURL(blob);
+		link.download = this.fileName;
+		link.click();
+	},
+
+	beginDataTransfer: function () {
+		console.log("Begin data transfer...");
+		// Send each chunk over the channel
 		for (var i in this.fileChunks) {
 			this.dataChannel.send(Base64Binary.encode(this.fileChunks[i]));
 		}
+		console.log("Sending TRANSFER-COMPLETE");
+		pubnub.publish({
+			channel: CHANNEL,
+			message: {
+				uuid: this.uuid,
+				status: "TRANSFER-COMPLETE"
+			}
+		});
 	},
 
 	handleSignal: function (msg) {
 		var self = this;
 		//console.log(msg);
 		// Don't care about messages we send
-		if (msg.uuid !== this.uuid) {
+		if ( msg.uuid !== this.uuid ) {
 			if (msg.desc) {
 				var desc = msg.desc;
 				console.log(desc.type + " received.");
@@ -161,7 +186,11 @@ FSClient.prototype = {
 				});
 				if (desc.type == OFFER) {
 					// Someone is ready to send file data. Let user opt-in to receive file data
-					document.querySelector("#getFile").removeAttribute("disabled");
+					var gfButton = document.querySelector("#getFile");
+					gfButton.removeAttribute("disabled");
+					this.fileName = msg.fName;
+					this.fileType = msg.fType;
+					gfButton.innerHTML = "Get File: " + this.fileName;
 				}
 				else if (desc.type == ANSWER) {
 					// Someone is ready to receive my data.
@@ -174,6 +203,10 @@ FSClient.prototype = {
 				if (this.peerConn.remoteDescription) {
 					this.peerConn.addIceCandidate(candidate);
 				}
+			}
+			else if (msg.status === "TRANSFER-COMPLETE") {
+				console.log("Received TRANSFER-COMPLETE");
+				this.prepareFileDownload();
 			}
 		}
 	}
@@ -190,7 +223,7 @@ document.onready = function () {
 			var reader = new FileReader();
 			reader.onloadend = function (e) {
 				if (reader.readyState == FileReader.DONE) {
-					client.stageFileData(reader.result);
+					client.stageFileData(file.name, file.type, reader.result);
 				}
 			};
 			reader.readAsArrayBuffer(file);
