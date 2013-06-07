@@ -11,8 +11,23 @@ function FSClient() {
 	this.isInitiator = false;
 	this.uuid = pubnub.uuid();
 	this.buffer = null;
-	this.peerConn = new RTCPeerConnection(null);
-	this.peerConn.onicecandidate = this.iceCallback;
+	this.chunkSize = 800;
+	this.fileChunks = [];
+	this.localIceCandidates = [];
+	this.remoteIceCandidates = [];
+	var configuration = { 'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }] };
+	this.peerConn = new webkitRTCPeerConnection(configuration, {
+		optional: [
+			{RtpDataChannels: true}
+		]
+	});
+
+	// Create event callbacks
+	this.createPeerConnCallbacks();
+	this.createChannelCallbacks();
+
+	// Register PC events
+	this.registerPeerConnEvents();
 
 	pubnub.subscribe({
 		channel: CHANNEL,
@@ -22,7 +37,12 @@ function FSClient() {
 
 FSClient.prototype = {
 	offerShare: function () {
+		console.log("Offering share...");
 		this.isInitiator = true;
+
+		this.dataChannel = this.peerConn.createDataChannel('RTCDataChannel', { reliable: false });
+		this.registerChannelEvents();
+
 		this.peerConn.createOffer(this.onDescAvail.bind(this),
 			function (err) {
 				console.log("createOffer() failed: " + err);
@@ -30,57 +50,130 @@ FSClient.prototype = {
 	},
 
 	answerShare: function () {
+		console.log("Answering share...");
 		this.isInitiator = false;
 		this.peerConn.createAnswer(this.onDescAvail.bind(this),
 			function (err) {
-				console.log("createOffer() failed: " + err);
+				console.log("createAnswer() failed: " + err);
 			}, {});
 	},
 
-	onDescAvail: function (sessionDesc) {
-		// Set the peer connection's local session description
-		this.peerConn.setLocalDescription(sessionDesc, function () {
-			console.log("Set localDescription successful!");
-		}, function (err) {
-			console.log("Could not set localDescription: " + err);
-		});
+	createPeerConnCallbacks: function () {
+		var self = this;
+		this.iceCallback = function (e) {
+			//console.log("Local ICE candidate found.");
+			pubnub.publish({
+				channel: CHANNEL,
+				message: { candidate: e.candidate }
+			});
+		};
+		this.dataChannelCreated = function (e) {
+			console.log("Data channel created by remote peer.");
+			self.dataChannel = e.channel;
+			self.registerChannelEvents();
+		};
+		this.onDescAvail = function (sessionDesc) {
+			console.log("My session description is now available. Sending over wire.");
+			// Set the peer connection's local session description
+			self.peerConn.setLocalDescription(sessionDesc, function () {
+				console.log("localDescription set");
+			}, function (err) {
+				console.log("Could not set localDescription: " + err);
+			});
 
-		// Send session description over wire via PubNub
-		// If we are the source, then the message indicates we are ready to send.
-		// Otherwise it indicates we are ready to receive data.
-		pubnub.publish({
-			channel: CHANNEL,
-			message: {
-				uuid: this.uuid,
-				desc: sessionDesc
+			// Send session description over wire via PubNub
+			// If we are the source, then the message indicates we are ready to send.
+			// Otherwise it indicates we are ready to receive data.
+			pubnub.publish({
+				channel: CHANNEL,
+				message: {
+					uuid: self.uuid,
+					desc: sessionDesc
+				}
+			});
+		};
+	},
+
+	registerPeerConnEvents: function () {
+		this.peerConn.onicecandidate = this.iceCallback.bind(this);
+		this.peerConn.ondatachannel = this.dataChannelCreated.bind(this);
+		console.log("PeerConnection events registered.");
+	},
+
+	createChannelCallbacks: function () {
+		var self = this;
+		this.onChannelMessage = function (msg) {
+			console.log("vvv DataChannel msg vvv");
+			console.log(msg);
+		};
+
+		this.onChannelReadyStateChange = function (e) {
+			console.log("Channel state: " + e.type);
+			if (e.type == "open") {
+				// Ready to communicate data now
+				self.beginTransfer();
 			}
-		});
+		};
+	},
+
+	registerChannelEvents: function () {
+		this.dataChannel.onmessage = this.onChannelMessage;
+		this.dataChannel.onopen = this.onChannelReadyStateChange;
+		this.dataChannel.onclose = this.onChannelReadyStateChange;
+		console.log("DataChannel events registered.");
 	},
 
 	stageFileData: function (buffer) {
-		console.log("File data staged.");
 		this.buffer = buffer;
+		var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
+		this.fileChunks = new Array(nChunks);
+		var start;
+		for (var i = 0; i < nChunks; i++) {
+			start = i * this.chunkSize;
+			this.fileChunks[i] = buffer.slice(start, start + this.chunkSize);
+		}
 		document.querySelector("#shareFile").disabled = "";
+		console.log("File data staged");
+	},
+
+	beginTransfer: function () {
+		for (var i in this.fileChunks) {
+			this.dataChannel.send(Base64Binary.encode(this.fileChunks[i]));
+		}
 	},
 
 	handleSignal: function (msg) {
-		console.log(msg);
+		var self = this;
+		//console.log(msg);
 		// Don't care about messages we send
-		if (msg.uuid != this.uuid && msg.desc) {
-			var desc = msg.desc;
-			console.log("Received " + desc.type + " message");
-			this.peerConn.setRemoteDescription(new RTCSessionDescription(desc), function () {
-				console.log("setRemoteDescription successful!");
-			}, function (err) {
-				console.log("Could not setRemoteDescription: " + err);
-			});
-			if (desc.type == OFFER) {
-				// Someone is ready to send file data. Let user opt-in to receive file data
-				document.querySelector("#getFile").removeAttribute("disabled");
+		if (msg.uuid !== this.uuid) {
+			if (msg.desc) {
+				var desc = msg.desc;
+				console.log(desc.type + " received.");
+				this.peerConn.setRemoteDescription(new RTCSessionDescription(desc), function () {
+					console.log("remoteDescription set");
+					console.log(self.peerConn.remoteDescription);
+					for (var i in self.remoteIceCandidates) {
+						self.peerConn.addIceCandidate(self.remoteIceCandidates[i]);
+					}
+				}, function (err) {
+					console.log("Could not setRemoteDescription: " + err);
+				});
+				if (desc.type == OFFER) {
+					// Someone is ready to send file data. Let user opt-in to receive file data
+					document.querySelector("#getFile").removeAttribute("disabled");
+				}
+				else if (desc.type == ANSWER) {
+					// Someone is ready to receive my data.
+					document.querySelector("#shareFile").disabled = "disabled";
+				}
 			}
-			else if (desc.type == ANSWER) {
-				// Someone is ready to receive my data.
-				
+			else if (msg.candidate) {
+				var candidate = new RTCIceCandidate(msg.candidate);
+				this.remoteIceCandidates.push(candidate);
+				if (this.peerConn.remoteDescription) {
+					this.peerConn.addIceCandidate(candidate);
+				}
 			}
 		}
 	}
@@ -90,13 +183,14 @@ var client = new FSClient();
 
 document.onready = function () {
 	var fInput = document.querySelector("#fileInput");
+	var file;
 	fInput.onchange = function (e) {
-		var file = fInput.files[0];
+		file = fInput.files[0];
 		if (file) {
 			var reader = new FileReader();
 			reader.onloadend = function (e) {
 				if (reader.readyState == FileReader.DONE) {
-					client.stageFileData(file.result);
+					client.stageFileData(reader.result);
 				}
 			};
 			reader.readAsArrayBuffer(file);
