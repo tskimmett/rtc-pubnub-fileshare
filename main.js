@@ -14,12 +14,14 @@ function FSClient() {
 	this.buffer = null;
 	this.chunkSize = 800;
 	this.fileChunks = [];
+	this.nChunksReceived = 0;
+	this.nChunksExpected = 0;
 	this.localIceCandidates = [];
 	this.remoteIceCandidates = [];
 	var configuration = { 'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }] };
 	this.peerConn = new webkitRTCPeerConnection(configuration, {
 		optional: [
-			{RtpDataChannels: true}
+			{ RtpDataChannels: true }
 		]
 	});
 
@@ -92,7 +94,8 @@ FSClient.prototype = {
 					uuid: self.uuid,
 					desc: sessionDesc,
 					fName: self.fileName,
-					fType: self.fileType
+					fType: self.fileType,
+					nChunks: self.fileChunks.length
 				}
 			});
 		};
@@ -107,16 +110,37 @@ FSClient.prototype = {
 	createChannelCallbacks: function () {
 		var self = this;
 		this.onChannelMessage = function (msg) {
-			console.log("vvv DataChannel msg vvv");
-			console.log(msg);
-			self.fileChunks.push(Base64Binary.decode(msg.data));
+			setTimeout(function (msg) {
+				console.log("vvv DataChannel msg vvv");
+				console.log(msg);
+				var data = JSON.parse(msg.data);
+				if (!isNaN(data.id)) {
+					self.fileChunks[data.id] = Base64Binary.decode(data.content);
+					self.nChunksReceived++;
+					if (!self.checkDownloadComplete()) {
+						self.send(JSON.stringify({
+							ack: data.id + 1
+						}));
+					}
+					else {
+						console.log("Last chunk received.");
+						self.prepareFileDownload();
+					}
+				}
+				else if (!isNaN(data.ack)) {
+					console.log("Peer requesting chunk " + data.ack);
+					self.send(self.packageChunk(data.ack));
+				}
+			}.bind(self, msg), 200);
 		};
 
 		this.onChannelReadyStateChange = function (e) {
 			console.log("Channel state: " + e.type);
 			if (e.type == "open") {
-				// Ready to communicate data now
-				self.beginDataTransfer();
+				if (self.isInitiator) {
+					// Ready to communicate data now
+					self.beginDataTransfer();
+				}
 			}
 		};
 	},
@@ -143,7 +167,11 @@ FSClient.prototype = {
 		console.log("File data staged");
 	},
 
-	prepareFileDownload: function() {
+	checkDownloadComplete: function () {
+		return (this.nChunksExpected == this.nChunksReceived);
+	},
+
+	prepareFileDownload: function () {
 		var blob = new Blob(this.fileChunks, { type: this.fileType });
 		var link = document.querySelector("#download");
 		link.href = window.URL.createObjectURL(blob);
@@ -152,18 +180,20 @@ FSClient.prototype = {
 	},
 
 	beginDataTransfer: function () {
+		var self = this;
 		console.log("Begin data transfer...");
 		// Send each chunk over the channel
-		for (var i in this.fileChunks) {
-			this.dataChannel.send(Base64Binary.encode(this.fileChunks[i]));
-		}
-		console.log("Sending TRANSFER-COMPLETE");
-		pubnub.publish({
-			channel: CHANNEL,
-			message: {
-				uuid: this.uuid,
-				status: "TRANSFER-COMPLETE"
-			}
+		this.send(this.packageChunk(0));
+	},
+
+	send: function (data) {
+		this.dataChannel.send(data);
+	},
+
+	packageChunk: function (chunkId) {
+		return JSON.stringify({
+			id: chunkId,
+			content: Base64Binary.encode(this.fileChunks[chunkId])
 		});
 	},
 
@@ -171,7 +201,7 @@ FSClient.prototype = {
 		var self = this;
 		//console.log(msg);
 		// Don't care about messages we send
-		if ( msg.uuid !== this.uuid ) {
+		if (msg.uuid !== this.uuid) {
 			if (msg.desc) {
 				var desc = msg.desc;
 				console.log(desc.type + " received.");
@@ -190,6 +220,7 @@ FSClient.prototype = {
 					gfButton.removeAttribute("disabled");
 					this.fileName = msg.fName;
 					this.fileType = msg.fType;
+					this.nChunksExpected = msg.nChunks;
 					gfButton.innerHTML = "Get File: " + this.fileName;
 				}
 				else if (desc.type == ANSWER) {
@@ -203,10 +234,6 @@ FSClient.prototype = {
 				if (this.peerConn.remoteDescription) {
 					this.peerConn.addIceCandidate(candidate);
 				}
-			}
-			else if (msg.status === "TRANSFER-COMPLETE") {
-				console.log("Received TRANSFER-COMPLETE");
-				this.prepareFileDownload();
 			}
 		}
 	}
