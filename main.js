@@ -12,7 +12,7 @@ function FSClient() {
 	this.uuid = pubnub.uuid();
 	this.fileName = null;
 	this.buffer = null;
-	this.chunkSize = 800;
+	this.chunkSize = 1000;
 	this.fileChunks = [];
 	this.nChunksReceived = 0;
 	this.nChunksExpected = 0;
@@ -43,6 +43,10 @@ FSClient.prototype = {
 		console.log("Offering share...");
 		this.isInitiator = true;
 
+		/***
+			-MUST create channel before createOffer
+			-Chrome requires {reliable: false}
+		***/
 		this.dataChannel = this.peerConn.createDataChannel('RTCDataChannel', { reliable: false });
 		this.registerChannelEvents();
 
