@@ -1,13 +1,19 @@
-﻿var CHANNEL = "get-my-file";
-var OFFER = "offer";
-var ANSWER = "answer";
+﻿var protocol = {
+	CHANNEL: "get-my-file",
+	OFFER: "offer",
+	ANSWER: "answer",
+	REQUEST: "req-chunk",
+	DATA: "data",
+	DONE: "done"
+};
+
 
 var IS_CHROME = !!window.webkitRTCPeerConnection;
 
 if (IS_CHROME) {
 	RTCPeerConnection = webkitRTCPeerConnection;
-	RTCIceCandidate = webkitRTCIceCandidate;
-	RTCSessionDescription = webkitRTCSessionDescription;
+	//RTCIceCandidate = webkitRTCIceCandidate;
+	//RTCSessionDescription = webkitRTCSessionDescription;
 }
 else {
 	RTCPeerConnection = mozRTCPeerConnection;
@@ -22,12 +28,11 @@ var pubnub = PUBNUB.init({
 
 function FSClient() {
 	this.isInitiator = false;
+	this.shareStart = null;
 	this.uuid = pubnub.uuid();
 	this.fileName = null;
 	this.buffer = null;
-	this.chunkSize = 800;
-	this.reqTimeoutThreshold = 500;
-	this.reqTimeout = null;
+	this.chunkSize = (IS_CHROME ? 800 : 50000);
 	this.fileChunks = [];
 	this.nChunksReceived = 0;
 	this.nChunksExpected = 0;
@@ -49,7 +54,7 @@ function FSClient() {
 	this.registerPeerConnEvents();
 
 	pubnub.subscribe({
-		channel: CHANNEL,
+		channel: protocol.CHANNEL,
 		callback: this.handleSignal.bind(this)
 	});
 };
@@ -90,7 +95,7 @@ FSClient.prototype = {
 		this.iceCallback = function (e) {
 			//console.log("Local ICE candidate found.");
 			pubnub.publish({
-				channel: CHANNEL,
+				channel: protocol.CHANNEL,
 				message: {
 					uuid: self.uuid,
 					candidate: e.candidate
@@ -104,6 +109,11 @@ FSClient.prototype = {
 		};
 		this.onDescAvail = function (sessionDesc) {
 			console.log("My session description is now available. Sending over wire.");
+			/***
+				CHROME HACK TO GET AROUND BANDWIDTH ISSUES
+			 ***/
+			sessionDesc.sdp = this.transformOutgoingSdp(sessionDesc.sdp);
+
 			// Set the peer connection's local session description
 			self.peerConn.setLocalDescription(sessionDesc, function () {
 				console.log("localDescription set");
@@ -113,7 +123,7 @@ FSClient.prototype = {
 
 			// Send session description over wire via PubNub
 			pubnub.publish({
-				channel: CHANNEL,
+				channel: protocol.CHANNEL,
 				message: {
 					uuid: self.uuid,
 					desc: sessionDesc,
@@ -137,32 +147,40 @@ FSClient.prototype = {
 			//console.log("vvv DataChannel msg vvv");
 			//console.log(msg);
 			var data = JSON.parse(msg.data);
-			if (data.action === "DATA") {
+			if (data.action === protocol.DATA) {
 				clearTimeout(this.reqTimeout);
 				if (!self.fileChunks[data.id]) {
 					self.fileChunks[data.id] = Base64Binary.decode(data.content);
 					self.nChunksReceived++;
 					if (!self.checkDownloadComplete()) {
-						self.requestChunk(data.id + 1);
+						//self.requestChunk(data.id + 1);
 					}
 					else {
 						console.log("Last chunk received.");
+						self.send(JSON.stringify({ action: protocol.DONE }));
 						self.prepareFileDownload();
 					}
 				}
 			}
-			else if (data.action === "REQ") {
+			else if (data.action === protocol.REQUEST) {
 				console.log("Peer requesting chunk " + data.id);
 				self.send(self.packageChunk(data.id));
+			}
+			else if (data.action === protocol.DONE) {
+				alert("Share took " + ((Date.now() - self.shareStart) / 1000) + " seconds");
 			}
 		};
 
 		this.onChannelReadyStateChange = function (e) {
 			console.log("Channel state: " + e.type);
 			if (e.type == "open") {
-				if (!self.isInitiator) {
+				if (self.isInitiator) {
+					console.log("Sending packets now...");
 					// Ready to communicate data now
-					self.requestChunk(0);
+					self.shareStart = Date.now();
+					for (var chunk in self.fileChunks) {
+						self.send(self.packageChunk(chunk));
+					}
 				}
 			}
 		};
@@ -208,7 +226,7 @@ FSClient.prototype = {
 
 	packageChunk: function (chunkId) {
 		return JSON.stringify({
-			action: "DATA",
+			action: protocol.DATA,
 			id: chunkId,
 			content: Base64Binary.encode(this.fileChunks[chunkId])
 		});
@@ -222,6 +240,12 @@ FSClient.prototype = {
 		});
 		this.send(req);
 		//this.reqTimeout = setTimeout(this.send.bind(this, req), this.reqTimeoutThreshold);
+	},
+
+	transformOutgoingSdp: function (sdp) {
+		var splitted = sdp.split("b=AS:30");
+		var newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
+		return newSDP;
 	},
 
 	/**
@@ -244,7 +268,7 @@ FSClient.prototype = {
 				}, function (err) {
 					console.log("Could not setRemoteDescription: " + err);
 				});
-				if (desc.type == OFFER) {
+				if (desc.type == protocol.OFFER) {
 					// Someone is ready to send file data. Let user opt-in to receive file data
 					var gfButton = document.querySelector("#getFile");
 					gfButton.removeAttribute("disabled");
@@ -253,7 +277,7 @@ FSClient.prototype = {
 					this.nChunksExpected = msg.nChunks;
 					gfButton.innerHTML = "Get File: " + this.fileName;
 				}
-				else if (desc.type == ANSWER) {
+				else if (desc.type == protocol.ANSWER) {
 					// Someone is ready to receive my data.
 					document.querySelector("#shareFile").disabled = "disabled";
 				}
