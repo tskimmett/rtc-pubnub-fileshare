@@ -3,6 +3,38 @@
 	padding: 0px;
 }
 
+.component {
+	display: none;
+}
+
 #download {
 	display: none;
 }
+
+.contact-list {
+	/*background-color: silver;*/
+}
+
+.contact {
+	border: solid 1px black;
+	padding: 5px;
+}
+
+	.contact .email {
+		display: inline-block;
+	}
+
+	.contact .status {
+		height: 10px;
+		width: 10px;
+		border-radius: 50%;
+		display: inline-block;
+	}
+
+	.contact[data-available=true] .status {
+		background-color: limegreen;
+	}
+
+	.contact[data-available=false] .status {
+		background-color: red;
+	}
