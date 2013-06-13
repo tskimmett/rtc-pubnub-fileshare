@@ -1,11 +1,13 @@
-﻿var protocol = {
-	CHANNEL: "get-my-file",
+﻿var HOSTED = window.location.protocol !== "file:";
+var protocol = {
+	CHANNEL: "get-my-file2",
 	OFFER: "offer",
 	ANSWER: "answer",
 	REQUEST: "req-chunk",
 	DATA: "data",
 	DONE: "done",
-	ERR_REJECT: "err-reject"
+	ERR_REJECT: "err-reject",
+	CANCEL: "cancel"
 };
 var IS_CHROME = !!window.webkitRTCPeerConnection;
 
@@ -19,16 +21,33 @@ else {
 	RTCIceCandidate = mozRTCIceCandidate;
 	RTCSessionDescription = mozRTCSessionDescription;
 }
+var pubnub;
 
 function createFSClient() {
 	var CONTACT_API_URL = "https://www.google.com/m8/feeds";
-	var pubnub;
 
 	function FSClient() {
 		this.connections = {};
 	};
 
 	FSClient.prototype = {
+		localLogin: function (name) {
+			this.uuid = name;
+			pubnub = PUBNUB.init({
+				publish_key: 'pub-c-b2d901ee-2a0f-4d89-8cd3-63039aa6dd90',
+				subscribe_key: 'sub-c-c74c7cd8-cc8b-11e2-a2ac-02ee2ddab7fe',
+				uuid: this.uuid
+			});
+
+			$(".my-email").html(this.uuid);
+
+			pubnub.subscribe({
+				channel: protocol.CHANNEL,
+				callback: this.handleSignal.bind(this),
+				presence: this.handlePresence.bind(this)
+			});
+		},
+
 		obtainGoogleToken: function () {
 			// First, parse the query string
 			var params = {}, queryString = location.hash.substring(1),
@@ -134,51 +153,57 @@ function createFSClient() {
 		},
 
 		handlePresence: function (msg) {
-			//console.log(msg);
-			// Only care about presence messages from people in our Google contacts
+			console.log(msg);
+			// Only care about presence messages from people in our Google contacts (if HOSTED)
 			var conn = this.connections[msg.uuid];
 			if (conn) {
 				conn.handlePresence(msg);
+			}
+			else if (!HOSTED && msg.uuid !== this.uuid && msg.action === "join") {
+				var template = _.template($("#contact-template").html().trim());
+				var email = msg.uuid;
+				console.log(msg.action == "join");
+				$(".contact-list").append(
+					$(template({ email: email, available: true }))
+				);
+				this.connections[email] = new Connection(email, document.getElementById("contact-" + email), this.uuid, pubnub);
+				this.connections[email].handlePresence(msg);
+				$(".contact-list").animate({ marginTop: "20px" }, 700);
 			}
 		}
 	};
 	return new FSClient();
 };
 
+var client = createFSClient();
 document.addEventListener("DOMContentLoaded", function () {
-	var client = createFSClient();
-	client.obtainGoogleToken();
-
-	//var fInput = document.querySelector("#fileInput");
-	//var file;
-	//fInput.addEventListener("change", function (e) {
-	//	file = fInput.files[0];
-	//	if (file) {
-	//		var reader = new FileReader();
-	//		reader.onloadend = function (e) {
-	//			if (reader.readyState == FileReader.DONE) {
-	//				client.stageFileData(file.name, file.type, reader.result);
-	//			}
-	//		};
-	//		reader.readAsArrayBuffer(file);
-	//	}
-	//});
-
-	//var gfButton = document.querySelector("#getFile");
-	//gfButton.addEventListener("click", function (e) {
-	//	// Once we're receiving data, we can't initiate anymore streaming
-	//	gfButton.disabled = "disabled";
-	//	fInput.disabled = "disabled";
-
-	//	client.answerShare();
-	//}, false);
-
-	//var sfButton = document.querySelector("#shareFile");
-	//sfButton.addEventListener("click", function (e) {
-	//	// Once we're sending data, we can't initiate anymore sharing
-	//	fInput.disabled = "disabled";
-	//	sfButton.disabled = "disabled";
-
-	//	client.offerShare();
-	//});
+	if (!HOSTED) {
+		$(".login-area").fadeIn();
+		var confirm = $(".confirm-name");
+		var input = $(".name-input");
+		confirm.hover(function () {
+			confirm.stop();
+			confirm.animate({ color: "#669999" }, 300);
+		}, function () {
+			confirm.stop();
+			confirm.animate({ color: "white" }, 300);
+		});
+		confirm.click(function () {
+			$(".login-area").fadeOut();
+			client.localLogin(input.val());
+		});
+		input.on("input", function () {
+			if ($(this).val().length > 2) {
+				$(".confirm-name-area").animate({ height: "38px" }, 300);
+				confirm.fadeIn();
+			}
+			else {
+				confirm.fadeOut();
+				$(".confirm-name-area").animate({ height: "0px" }, 300);
+			}
+		});
+	}
+	else {
+		client.obtainGoogleToken();
+	}
 });

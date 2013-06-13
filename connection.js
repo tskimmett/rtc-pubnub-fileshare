@@ -4,6 +4,7 @@
 		this.element = element;
 		this.fileInput = element.querySelector("input");
 		this.getButton = element.querySelector(".get");
+		this.cancelButton = element.querySelector(".cancel");
 		this.isInitiator = false;
 		this.connected = false;
 		this.shareStart = null;
@@ -137,6 +138,7 @@
 				if (desc.type == protocol.OFFER) {
 					// Someone is ready to send file data. Let user opt-in to receive file data
 					self.getButton.removeAttribute("disabled");
+					self.cancelButton.removeAttribute("disabled");
 					self.fileInput.disabled = "disabled";
 					self.fileName = msg.fName;
 					self.fileType = msg.fType;
@@ -148,7 +150,7 @@
 					self.fileInput.setAttribute("disabled", "disabled");
 				}
 			}, function (err) {
-				console.log("Could not setRemoteDescription: " + err);
+				console.log("Could not setRemoteDescription: " + JSON.stringify(err));
 				self.pubnub.publish({
 					channel: protocol.CHANNEL,
 					message: {
@@ -171,6 +173,10 @@
 		handleSignal: function(msg) {
 			if (msg.action === protocol.ERR_REJECT) {
 				alert("Unable to communicate with " + this.email);
+				this.reset();
+			}
+			else if (msg.action === protocol.CANCEL) {
+				alert(this.email + " cancelled the share.");
 				this.reset();
 			}
 		},
@@ -228,6 +234,7 @@
 				}, function (err) {
 					console.log("Could not set localDescription: " + err);
 				});
+				self.cancelButton.removeAttribute("disabled");
 				self.connected = true;
 				// Send session description over wire via PubNub
 				self.pubnub.publish({
@@ -336,11 +343,22 @@
 				self.answerShare();
 				self.connected = true;
 			};
+			this.shareCancelled = function (e) {
+				self.pubnub.publish({
+					channel: protocol.CHANNEL,
+					message: {
+						uuid: self.uuid,
+						action: protocol.CANCEL
+					}
+				});
+				self.reset();
+			};
 		},
 
 		registerUIEvents: function () {
 			this.fileInput.onchange = this.filePicked;
 			this.getButton.onclick = this.shareAccepted;
+			this.cancelButton.onclick = this.shareCancelled;
 		},
 
 		reset: function () {
@@ -349,6 +367,7 @@
 			}
 			this.fileInput.value = "";
 			this.getButton.disabled = "disabled";
+			this.cancelButton.disabled = "disabled";
 			this.getButton.innerHTML = "Get File";
 			this.isInitiator = false;
 			this.connected = false;
