@@ -1,6 +1,11 @@
 ﻿body {
 	margin: 0px;
 	padding: 0px;
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	font-family: 'Segoe UI' sans-serif;
+	/*background-color: silver;*/
 }
 
 .component {
@@ -11,24 +16,63 @@
 	display: none;
 }
 
+.top-bar {
+	height: 60px;
+	background-color: #669999;
+	width: 100%;
+	text-align: center;
+	font-size: 28px;
+	color: white;
+}
+
+.my-email {
+	display: inline-block;
+	line-height: 1px;
+}
+
 .contact-list {
-	/*background-color: silver;*/
+	background-color: #808080;
+	margin-left: auto;
+	margin-right: auto;
+	width: 600px;
+	position: relative;
 }
 
 .contact {
-	border: solid 1px black;
-	padding: 5px;
+	border-bottom: solid 1px #fff;
+	/*padding: 5px;*/
+	height: 45px;
 }
 
-	.contact .email {
+	.contact > * {
 		display: inline-block;
 	}
 
+	.contact .email {
+		color: white;
+		line-height: 12px;
+		margin-left: 15px;
+		max-width: 240px;
+	}
+
+	.contact .share {
+		color: white;
+		margin-top: 12px;
+		float: right;
+	}
+
+	.contact .get {
+		margin-top: 12px;
+		margin-right: 10px;
+		float: right;
+	}
+
 	.contact .status {
-		height: 10px;
+		height: 45px;
 		width: 10px;
-		border-radius: 50%;
+		/*border-radius: 50%;*/
 		display: inline-block;
+		position: absolute;
 	}
 
 	.contact[data-available=true] .status {
