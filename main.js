@@ -136,9 +136,9 @@ function createFSClient() {
 		**/
 		handleSignal: function (msg) {
 			var self = this;
-			//console.log(msg);
+			console.log(msg);
 			// Don't care about messages we send
-			if (msg.uuid !== this.uuid) {
+			if (msg.uuid !== this.uuid && msg.target === this.uuid) {
 				var targetConnection = self.connections[msg.uuid];
 				if (msg.desc) {
 					targetConnection.receiveDesc(msg);
@@ -180,6 +180,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	if (!HOSTED) {
 		$(".login-area").fadeIn();
 		var confirm = $(".confirm-name");
+		var confirmArea = $(".confirm-name-area");
 		var input = $(".name-input");
 		confirm.hover(function () {
 			confirm.stop();
@@ -193,13 +194,24 @@ document.addEventListener("DOMContentLoaded", function () {
 			client.localLogin(input.val());
 		});
 		input.on("input", function () {
-			if ($(this).val().length > 2) {
-				$(".confirm-name-area").animate({ height: "38px" }, 300);
-				confirm.fadeIn();
+			var curr = $(this).val();
+			curr = curr.replace(/\W/g, "");
+			$(this).val(curr);
+			if (curr.length > 2 && curr.length < 20) {
+				if (curr.length >= 3 || curr.length <= 19) {
+					if (confirmArea.height() != 38) {
+						confirm.fadeIn();
+						confirmArea.animate({ height: "38px" }, 300);
+					}
+				}
 			}
 			else {
-				confirm.fadeOut();
-				$(".confirm-name-area").animate({ height: "0px" }, 300);
+				//confirm.stop();
+				//confirmArea.stop();
+				if (confirmArea.height() != 0) {
+					confirm.fadeOut();
+					confirmArea.animate({ height: "0px" }, 300);
+				}
 			}
 		});
 	}

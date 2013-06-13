@@ -5,6 +5,7 @@
 		this.fileInput = element.querySelector("input");
 		this.getButton = element.querySelector(".get");
 		this.cancelButton = element.querySelector(".cancel");
+		this.progress = element.querySelector(".progress");
 		this.isInitiator = false;
 		this.connected = false;
 		this.shareStart = null;
@@ -26,6 +27,9 @@
 
 		// Register UI events
 		this.registerUIEvents();
+
+		// Progress bar init
+		this.initProgress();
 	};
 
 	Connection.prototype = {
@@ -46,7 +50,7 @@
 				-Chrome requires {reliable: false}
 			***/
 			var dict = {};
-			if (window.webkitRTCPeerConnection) {
+			if (IS_CHROME) {
 				dict.reliable = false;
 			}
 			if (!this.connected) {
@@ -143,7 +147,7 @@
 					self.fileName = msg.fName;
 					self.fileType = msg.fType;
 					self.nChunksExpected = msg.nChunks;
-					self.getButton.innerHTML = "Get File: " + self.fileName;
+					self.getButton.innerHTML = "Get: " + self.fileName;
 				}
 				else if (desc.type == protocol.ANSWER) {
 					// Someone is ready to receive my data.
@@ -212,7 +216,8 @@
 					channel: protocol.CHANNEL,
 					message: {
 						uuid: self.uuid,
-						candidate: e.candidate
+						candidate: e.candidate,
+						target: self.email
 					}
 				});
 			};
@@ -237,15 +242,19 @@
 				self.cancelButton.removeAttribute("disabled");
 				self.connected = true;
 				// Send session description over wire via PubNub
+				var msg = {
+					uuid: self.uuid,
+					desc: sessionDesc,
+					target: self.email
+				};
+				if (self.isInitiator) {
+					msg.fName = self.fileName;
+					msg.fType = self.fileType;
+					msg.nChunks = self.fileChunks.length;
+				}
 				self.pubnub.publish({
 					channel: protocol.CHANNEL,
-					message: {
-						uuid: self.uuid,
-						desc: sessionDesc,
-						fName: self.fileName,
-						fType: self.fileType,
-						nChunks: self.fileChunks.length
-					}
+					message: msg
 				});
 			};
 		},
@@ -259,14 +268,12 @@
 		createChannelCallbacks: function () {
 			var self = this;
 			this.onChannelMessage = function (msg) {
-				//console.log("vvv DataChannel msg vvv");
-				//console.log(msg);
 				var data = JSON.parse(msg.data);
 				if (data.action === protocol.DATA) {
-					clearTimeout(this.reqTimeout);
 					if (!self.fileChunks[data.id]) {
 						self.fileChunks[data.id] = Base64Binary.decode(data.content);
 						self.nChunksReceived++;
+						self.updateProgress(self.nChunksReceived / self.nChunksExpected);
 						if (!self.checkDownloadComplete()) {
 							//self.requestChunk(data.id + 1);
 						}
@@ -298,6 +305,7 @@
 						console.log("Sending packets now...");
 						// Ready to communicate data now
 						self.shareStart = Date.now();
+						self.animateProgress();
 						for (var chunk in self.fileChunks) {
 							self.send(self.packageChunk(chunk));
 						}
@@ -348,7 +356,8 @@
 					channel: protocol.CHANNEL,
 					message: {
 						uuid: self.uuid,
-						action: protocol.CANCEL
+						action: protocol.CANCEL,
+						target: self.email
 					}
 				});
 				self.reset();
@@ -361,10 +370,50 @@
 			this.cancelButton.onclick = this.shareCancelled;
 		},
 
+		initProgress: function () {
+			var self = this;
+			// SVG stuff
+			var ctx = ctx = this.progress.getContext('2d');
+			var imd = null;
+			var circ = Math.PI * 2;
+			var quart = Math.PI / 2;
+			var interval;
+
+			ctx.beginPath();
+			ctx.strokeStyle = '#99CC33';
+			ctx.lineCap = 'square';
+			ctx.closePath();
+			ctx.fill();
+			ctx.lineWidth = 4.0;
+
+			imd = ctx.getImageData(0, 0, 36, 36);
+
+			this.updateProgress = function (percent) {
+				ctx.putImageData(imd, 0, 0);
+				ctx.beginPath();
+				ctx.arc(18, 18, 7, -(quart), ((circ) * percent) - quart, false);
+				ctx.stroke();
+			};
+
+			this.animateProgress = function () {
+				var p = 0;
+				interval = setInterval(function() {
+					p += 15;
+					self.updateProgress((p % 100) / 100);
+				}, 500);
+			};
+			this.stopProgress = function() {
+				clearInterval(interval);
+			};
+
+		},
+
 		reset: function () {
 			if (this.available) {
 				this.fileInput.removeAttribute("disabled");
 			}
+			this.stopProgress();
+			this.updateProgress(0);
 			this.fileInput.value = "";
 			this.getButton.disabled = "disabled";
 			this.cancelButton.disabled = "disabled";

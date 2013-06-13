@@ -65,6 +65,9 @@
 		margin-top: 12px;
 		margin-right: 10px;
 		float: right;
+		max-width: 115px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.contact .cancel {
@@ -87,6 +90,12 @@
 
 	.contact[data-available=false] .status {
 		background-color: red;
+	}
+
+	.contact .progress {
+		float: right;
+		margin-top: 5px;
+		margin-right: 5px;
 	}
 
 /**
