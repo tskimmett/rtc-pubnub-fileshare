@@ -21,11 +21,10 @@ else {
 	RTCIceCandidate = mozRTCIceCandidate;
 	RTCSessionDescription = mozRTCSessionDescription;
 }
-var pubnub;
 
 function createFSClient() {
 	var CONTACT_API_URL = "https://www.google.com/m8/feeds";
-
+	var pubnub;
 	function FSClient() {
 		this.connections = {};
 	};
@@ -175,8 +174,9 @@ function createFSClient() {
 	return new FSClient();
 };
 
-var client = createFSClient();
 document.addEventListener("DOMContentLoaded", function () {
+	var client = createFSClient();
+
 	if (!HOSTED) {
 		$(".login-area").fadeIn();
 		var confirm = $(".confirm-name");
