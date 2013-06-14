@@ -15,6 +15,11 @@
 		this.buffer = null;
 		this.chunkSize = (IS_CHROME ? 800 : 50000);
 		this.fileChunks = [];
+		this.missingChunks = [];
+		this.numRequested = 0;
+		this.requestMax = 90;
+		this.requestThreshold = 70;
+		this.expireTime = 2000;
 		this.nChunksReceived = 0;
 		this.nChunksExpected = 0;
 		this.localIceCandidates = [];
@@ -114,13 +119,42 @@
 			});
 		},
 
-		requestChunk: function (chunkId) {
-			console.log("Request chunk " + chunkId);
+		requestChunks: function () {
+			var self = this;
+			var chunks = [];
+			var n = 0;
+			for (var id in this.missingChunks) {
+				chunks.push(id);
+				delete this.missingChunks[id];
+				if (++n >= this.requestMax) {
+					break;
+				}
+			}
+			this.numRequested += n;
+			if (!n) {
+				return;
+			}
+			//console.log("Requesting chunks: " + n);
 			var req = JSON.stringify({
-				action: "REQ",
-				id: chunkId
+				action: protocol.REQUEST,
+				ids: chunks
 			});
 			this.send(req);
+
+			setTimeout(function () {
+				var expired = 0;
+				for (var i in chunks) {
+					var id = chunks[i];
+					if (!self.fileChunks[id]) {
+						expired++;
+						self.missingChunks[id] = true;
+					}
+				}
+				//console.log(expired + " chunks expired. Adding back to missing");
+				if (expired && self.numRequested < self.requestThreshold) {
+					self.requestChunks();
+				}
+			}, this.expireTime);
 		},
 
 		transformOutgoingSdp: function (sdp) {
@@ -146,7 +180,15 @@
 					self.fileInput.disabled = "disabled";
 					self.fileName = msg.fName;
 					self.fileType = msg.fType;
+					self.fileChunks = [];
+					self.missingChunks = [];
+					self.numRequested = 0;
+					self.nChunksReceived = 0;
 					self.nChunksExpected = msg.nChunks;
+					// All chunks are missing to start
+					for (var i = 0; i < msg.nChunks; i++) {
+						self.missingChunks[i] = true;
+					}
 					self.getButton.innerHTML = "Get: " + self.fileName;
 				}
 				else if (desc.type == protocol.ANSWER) {
@@ -174,7 +216,7 @@
 			}
 		},
 
-		handleSignal: function(msg) {
+		handleSignal: function (msg) {
 			if (msg.action === protocol.ERR_REJECT) {
 				alert("Unable to communicate with " + this.email);
 				this.reset();
@@ -273,9 +315,12 @@
 					if (!self.fileChunks[data.id]) {
 						self.fileChunks[data.id] = Base64Binary.decode(data.content);
 						self.nChunksReceived++;
+						self.numRequested--;
 						self.updateProgress(self.nChunksReceived / self.nChunksExpected);
 						if (!self.checkDownloadComplete()) {
-							//self.requestChunk(data.id + 1);
+							if (self.numRequested < self.requestThreshold) {
+								self.requestChunks();
+							}
 						}
 						else {
 							console.log("Last chunk received.");
@@ -287,8 +332,10 @@
 					}
 				}
 				else if (data.action === protocol.REQUEST) {
-					console.log("Peer requesting chunk " + data.id);
-					self.send(self.packageChunk(data.id));
+					//console.log("Peer requesting chunks");
+					data.ids.forEach(function (id) {
+						self.send(self.packageChunk(id));
+					});
 				}
 				else if (data.action === protocol.DONE) {
 					self.connected = false;
@@ -301,15 +348,22 @@
 			this.onChannelReadyStateChange = function (e) {
 				console.log("Channel state: " + e.type);
 				if (e.type == "open") {
-					if (self.isInitiator) {
-						console.log("Sending packets now...");
-						// Ready to communicate data now
-						self.shareStart = Date.now();
-						self.animateProgress();
-						for (var chunk in self.fileChunks) {
-							self.send(self.packageChunk(chunk));
-						}
+					if (!self.isInitiator) {
+						self.requestChunks();
 					}
+					else {
+						self.animateProgress();
+						self.shareStart = Date.now();
+					}
+					//if (self.isInitiator) {
+					//	console.log("Sending packets now...");
+					//	// Ready to communicate data now
+					//	self.shareStart = Date.now();
+					//	self.animateProgress();
+					//	for (var chunk in self.fileChunks) {
+					//		self.send(self.packageChunk(chunk));
+					//	}
+					//}
 				}
 				else if (e.type === "closed" || e.type === "error" && self.connected) {
 					alert("A communication error occurred. Sorry.");
@@ -397,12 +451,12 @@
 
 			this.animateProgress = function () {
 				var p = 0;
-				interval = setInterval(function() {
+				interval = setInterval(function () {
 					p += 15;
 					self.updateProgress((p % 100) / 100);
 				}, 500);
 			};
-			this.stopProgress = function() {
+			this.stopProgress = function () {
 				clearInterval(interval);
 			};
 
@@ -422,9 +476,6 @@
 			this.connected = false;
 			this.fileName = null;
 			this.buffer = null;
-			this.fileChunks = [];
-			this.nChunksReceived = 0;
-			this.nChunksExpected = 0;
 			delete this.dataChannel;
 			this.peerConn.close();
 			delete this.peerConn;
