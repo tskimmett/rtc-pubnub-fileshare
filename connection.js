@@ -1,4 +1,6 @@
 ﻿var Connection = (function wrap() {
+  "use strict";
+
 	function Connection(email, element, uuid, pubnub) {
 		this.email = email;
 		this.element = element;

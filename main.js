@@ -123,7 +123,9 @@ function createFSClient() {
 					}
 					c = template({ email: email, available: false });
 					list.append($(c));
-					self.connections[email] = new Connection(email, document.getElementById("contact-" + email), self.uuid, pubnub);
+					self.connections[email] = new Connection(email,
+            document.getElementById("contact-" + email),
+            self.uuid, pubnub);
 				});
 
 				$(".contact-list").animate({ marginTop: "20px" }, 700);
@@ -165,7 +167,9 @@ function createFSClient() {
 				$(".contact-list").append(
 					$(template({ email: email, available: true }))
 				);
-				this.connections[email] = new Connection(email, document.getElementById("contact-" + email), this.uuid, pubnub);
+				this.connections[email] = new Connection(email,
+          document.getElementById("contact-" + email),
+          this.uuid, pubnub);
 				this.connections[email].handlePresence(msg);
 				$(".contact-list").animate({ marginTop: "20px" }, 700);
 			}
