@@ -1,6 +1,19 @@
 ﻿var Connection = (function wrap() {
   "use strict";
 
+  var HOSTED = window.location.protocol !== "file:";
+	var protocol = {
+		CHANNEL: "get-my-file2",
+		OFFER: "offer",
+		ANSWER: "answer",
+		REQUEST: "req-chunk",
+		DATA: "data",
+		DONE: "done",
+		ERR_REJECT: "err-reject",
+		CANCEL: "cancel"
+	};
+  var IS_CHROME = !!window.webkitRTCPeerConnection;
+
 	function Connection(email, element, uuid, pubnub) {
 		this.email = email;
 		this.element = element;

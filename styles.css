@@ -1,11 +1,84 @@
-﻿body {
+﻿/* CSS Reset */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* End CSS Reset */
+
+/* Global Components */
+button {
+  display: block;
+  border: none;
+  background: #E85851;
+  color: #EEEBE4;
+  font-size: 14px;
+}
+
+button[disabled="disabled"] {
+  background: gray;
+  color: #CCC;
+}
+/* End Global Components */
+
+body {
 	margin: 0px;
 	padding: 0px;
 	height: 100%;
 	width: 100%;
 	position: absolute;
-	font-family: 'Segoe UI' sans-serif;
-	/*background-color: silver;*/
+	font-family: 'Telex', sans-serif;
+  font-weight: bold;
+	background-color: #EEEBE4;
+}
+
+.title {
+  font-family: 'Permanent Marker', sans-serif;
+  font-weight: normal;
+  font-size: 32px;
+  display: block;
+  margin: 0 auto;
+  padding-top: 15px;
+  color: white;
+  display: inline-block;
 }
 
 .component {
@@ -18,7 +91,7 @@
 
 .top-bar {
 	height: 60px;
-	background-color: #669999;
+	background-color: #262220;
 	width: 100%;
 	text-align: center;
 	font-size: 28px;
@@ -27,11 +100,16 @@
 
 .my-email {
 	display: inline-block;
-	line-height: 1px;
+  float: right;
+  padding-top: 18px;
+  padding-right: 15px;
+  position: absolute;
+  right: 15px;
+  top: 0;
 }
 
 .contact-list {
-	background-color: #808080;
+	background-color: #262220;
 	margin-left: auto;
 	margin-right: auto;
 	width: 600px;
@@ -39,9 +117,10 @@
 }
 
 .contact {
-	border-bottom: solid 5px #fff;
+	border-bottom: solid 5px #EEEBE4;
 	/*padding: 5px;*/
 	height: 45px;
+  color: #EEEBE4;
 }
 
 	.contact > * {
@@ -49,11 +128,11 @@
 	}
 
 	.contact .email {
-		color: white;
-		line-height: 12px;
-		margin-left: 15px;
+		margin-left: 18px;
 		max-width: 240px;
 		font-weight: bold;
+    display: inline-block;
+    margin-top: 15px;
 	}
 
 	.contact .share {
@@ -108,6 +187,7 @@
 }
 
 .outer-box {
+  background: white;
 	width: 332px;
 	margin-left: auto;
 	margin-right: auto;
@@ -135,9 +215,10 @@
 }
 
 .confirm-name-area {
-	background-color: silver;
+	background-color: #E85851;
 	width: 100%;
 	height: 0px;
+  padding-top: 10px;
 }
 
 .confirm-name {
@@ -145,4 +226,10 @@
 	text-decoration: none;
 	color: white;
 	display: none;
+}
+
+.byline {
+  position: fixed;
+  bottom: 15px;
+  left: 15px;
 }

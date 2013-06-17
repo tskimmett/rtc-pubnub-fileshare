@@ -1,9 +1,12 @@
 ﻿<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
 <head>
-	<title>File Share</title>
-	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1" />
-	<link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1" />
+
+  <title>File Share</title>
+
+  <link href='http://fonts.googleapis.com/css?family=Permanent+Marker|Telex' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 	<script type="text/template" id="contact-template">
@@ -16,15 +19,28 @@
 			<button disabled="disabled" class="get">Get File</button>
 		</div>
 	</script>
+
 	<div class="top-bar">
+    <h1 class="title">PubNub FileShare</h1>
 		<p class="my-email"></p>
 	</div>
+
 	<div class="contact-list"></div>
+
 	<div class="login-area">
 		<div class="outer-box">
 			<div class="register-box">
 				<div class="login-head">What's your name?</div>
 				<input class="name-input" />
+        <br />
+        <br />
+        <p>or</p>
+        <br />
+        <div class="google-login">
+          <a id="google-login-button">
+            <img src="White-signin_Long_base_32dp.png" alt="Google Signin Button" />
+          </a>
+        </div>
 			</div>
 			<div class="confirm-name-area">
 				<a href="#" class="confirm-name">Start Sharing</a>
@@ -32,14 +48,17 @@
 		</div>
 	</div>
 	<a id="download"></a>
+
+  <div class="byline">
+    <p>Created by</p>
+    <a href="http://pubnub.com"><img src="pubnub-large.png" alt="PubNub" /></a>
+  </div>
+
+  <script src="http://code.jquery.com/jquery-2.0.0.min.js"></script>
+  <script src="http://cdn.pubnub.com/pubnub-3.5.1.min.js"></script>
+  <script src="./base64binary.js"></script>
+  <script src="./underscore.js"></script>
+  <script src="./connection.js"></script>
+  <script src="./main.js"></script>
 </body>
-
-<script src="http://code.jquery.com/jquery-2.0.0.min.js"></script>
-<script src="http://cdn.pubnub.com/pubnub-3.5.0.min.js"></script>
-<script src="http://code.jquery.com/color/jquery.color-2.1.2.min.js"></script>
-<script src="./base64binary.js"></script>
-<script src="./underscore.js"></script>
-<script src="./main.js"></script>
-<script src="./connection.js"></script>
-
 </html>
