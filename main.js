@@ -9,6 +9,7 @@ var protocol = {
 	ERR_REJECT: "err-reject",
 	CANCEL: "cancel"
 };
+
 var IS_CHROME = !!window.webkitRTCPeerConnection;
 
 if (IS_CHROME) {

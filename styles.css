@@ -34,7 +34,7 @@
 	background-color: #808080;
 	margin-left: auto;
 	margin-right: auto;
-	width: 600px;
+	width: 700px;
 	position: relative;
 }
 
@@ -50,10 +50,13 @@
 
 	.contact .email {
 		color: white;
-		line-height: 12px;
+      margin-top: 12px;
 		margin-left: 15px;
-		max-width: 240px;
+		max-width: 210px;
 		font-weight: bold;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
 	}
 
 	.contact .share {

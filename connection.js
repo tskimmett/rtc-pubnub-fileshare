@@ -13,40 +13,35 @@
 		this.shareStart = null;
 		this.uuid = uuid;
 		this.pubnub = pubnub;
-		this.fileName = null;
-		this.buffer = null;
-		this.chunkSize = (IS_CHROME ? 800 : 50000);
-		this.fileChunks = [];
-		this.missingChunks = [];
-		this.numRequested = 0;
-		this.requestMax = 90;
-		this.requestThreshold = 70;
-		this.expireTime = 2000;
-		this.nChunksReceived = 0;
-		this.nChunksExpected = 0;
 		this.localIceCandidates = [];
 		this.remoteIceCandidates = [];
+
+		this.fileManager = new FileManager();
 
 		// Create event callbacks
 		this.createPeerConnCallbacks();
 		this.createChannelCallbacks();
 		this.createUICallbacks();
+		this.createFileCallbacks();
 
 		// Register UI events
 		this.registerUIEvents();
 
 		// Progress bar init
 		this.initProgress();
+
+		this.registerFileEvents();
 	};
 
 	Connection.prototype = {
-		pcOpt: {
+		pcOpt: (IS_CHROME ? {
 			optional: [
 				{ RtpDataChannels: true }
 			]
-		},
+		} : {}),
 
-		pcConfiguration: { iceServers: [{ url: (IS_CHROME ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121') }] },
+      // Browser should automatically use proper stun servers
+		pcConfiguration: null,//{ iceServers: [{ url: (IS_CHROME ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121') }] },
 
 		offerShare: function () {
 			console.log("Offering share...");
@@ -83,80 +78,16 @@
 				}, {});
 		},
 
-		stageFileData: function (fName, fType, buffer) {
-			this.fileName = fName;
-			this.fileType = fType;
-			this.buffer = buffer;
-			var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
-			this.fileChunks = new Array(nChunks);
-			var start;
-			for (var i = 0; i < nChunks; i++) {
-				start = i * this.chunkSize;
-				this.fileChunks[i] = buffer.slice(start, start + this.chunkSize);
-			}
-			console.log("File data staged");
-		},
-
-		checkDownloadComplete: function () {
-			return (this.nChunksExpected == this.nChunksReceived);
-		},
-
-		prepareFileDownload: function () {
-			var blob = new Blob(this.fileChunks, { type: this.fileType });
-			var link = document.querySelector("#download");
-			link.href = window.URL.createObjectURL(blob);
-			link.download = this.fileName;
-			link.click();
-		},
-
 		send: function (data) {
 			this.dataChannel.send(data);
 		},
-
+    
 		packageChunk: function (chunkId) {
 			return JSON.stringify({
 				action: protocol.DATA,
 				id: chunkId,
-				content: Base64Binary.encode(this.fileChunks[chunkId])
+				content: Base64Binary.encode(this.fileManager.fileChunks[chunkId])
 			});
-		},
-
-		requestChunks: function () {
-			var self = this;
-			var chunks = [];
-			var n = 0;
-			for (var id in this.missingChunks) {
-				chunks.push(id);
-				delete this.missingChunks[id];
-				if (++n >= this.requestMax) {
-					break;
-				}
-			}
-			this.numRequested += n;
-			if (!n) {
-				return;
-			}
-			//console.log("Requesting chunks: " + n);
-			var req = JSON.stringify({
-				action: protocol.REQUEST,
-				ids: chunks
-			});
-			this.send(req);
-
-			setTimeout(function () {
-				var expired = 0;
-				for (var i in chunks) {
-					var id = chunks[i];
-					if (!self.fileChunks[id]) {
-						expired++;
-						self.missingChunks[id] = true;
-					}
-				}
-				//console.log(expired + " chunks expired. Adding back to missing");
-				if (expired && self.numRequested < self.requestThreshold) {
-					self.requestChunks();
-				}
-			}, this.expireTime);
 		},
 
 		transformOutgoingSdp: function (sdp) {
@@ -180,18 +111,11 @@
 					self.getButton.removeAttribute("disabled");
 					self.cancelButton.removeAttribute("disabled");
 					self.fileInput.disabled = "disabled";
-					self.fileName = msg.fName;
-					self.fileType = msg.fType;
-					self.fileChunks = [];
-					self.missingChunks = [];
-					self.numRequested = 0;
-					self.nChunksReceived = 0;
-					self.nChunksExpected = msg.nChunks;
-					// All chunks are missing to start
-					for (var i = 0; i < msg.nChunks; i++) {
-						self.missingChunks[i] = true;
-					}
-					self.getButton.innerHTML = "Get: " + self.fileName;
+					
+					self.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
+
+					self.getButton.innerHTML = "Get: " + msg.fName;
+					self.statusBlink(true);
 				}
 				else if (desc.type == protocol.ANSWER) {
 					// Someone is ready to receive my data.
@@ -203,11 +127,29 @@
 					channel: protocol.CHANNEL,
 					message: {
 						uuid: self.uuid,
-						action: protocol.ERR_REJECT
+						action: protocol.ERR_REJECT,
+                  target: self.email
 					}
 				});
 				self.reset();
 			});
+		},
+
+		statusBlink: function (on) {
+		   console.log("BLINK");
+		   var indicator = $(this.element.querySelector(".status"));
+		   if (!on) {
+		      clearInterval(this.blink);
+		      //indicator.css("background-color", (this.available ? "limegreen" : "red"));
+		      return;
+		   }
+		   var white = true;
+		   this.blink = setInterval(function () {
+		      //console.log("Blinking " + (white ? "white" : "limegreen"));
+		      indicator.css("background-color", (white ? "white" : "limegreen"));
+		      //indicator.animate({backgroundColor: (white ? "white" : "limegreen")}, 100);
+		      white = !white;
+		   }, 700);
 		},
 
 		receiveICE: function (candidate) {
@@ -235,20 +177,23 @@
 				this.element.setAttribute("data-available", "true");
 				this.fileInput.removeAttribute("disabled");
 				if (!this.peerConn) {
-					this.peerConn = new RTCPeerConnection(this.pcConfiguration, (IS_CHROME ? this.pcOpt : {}));
+					this.peerConn = new RTCPeerConnection(this.pcConfiguration, this.pcOpt);
 					this.registerPeerConnEvents();
 				}
 				var j = $(this.element);
 				j.prependTo(j.parent());
 			}
 			else {
-				this.available = false;
+			   this.available = false;
+			   this.statusBlink(false);
 				this.element.setAttribute("data-available", "false");
 				this.fileInput.disabled = "disabled";
 				if (this.connected) {
 					alert(this.email + " has canceled the share.");
 					this.reset();
 				}
+				var j = $(this.element);
+				j.appendTo(j.parent());
 			}
 		},
 
@@ -292,9 +237,9 @@
 					target: self.email
 				};
 				if (self.isInitiator) {
-					msg.fName = self.fileName;
-					msg.fType = self.fileType;
-					msg.nChunks = self.fileChunks.length;
+					msg.fName = self.fileManager.fileName;
+					msg.fType = self.fileManager.fileType;
+					msg.nChunks = self.fileManager.fileChunks.length;
 				}
 				self.pubnub.publish({
 					channel: protocol.CHANNEL,
@@ -314,24 +259,7 @@
 			this.onChannelMessage = function (msg) {
 				var data = JSON.parse(msg.data);
 				if (data.action === protocol.DATA) {
-					if (!self.fileChunks[data.id]) {
-						self.fileChunks[data.id] = Base64Binary.decode(data.content);
-						self.nChunksReceived++;
-						self.numRequested--;
-						self.updateProgress(self.nChunksReceived / self.nChunksExpected);
-						if (!self.checkDownloadComplete()) {
-							if (self.numRequested < self.requestThreshold) {
-								self.requestChunks();
-							}
-						}
-						else {
-							console.log("Last chunk received.");
-							self.send(JSON.stringify({ action: protocol.DONE }));
-							self.prepareFileDownload();
-							self.connected = false;
-							self.reset();
-						}
-					}
+				  self.fileManager.receiveChunk(data);
 				}
 				else if (data.action === protocol.REQUEST) {
 					//console.log("Peer requesting chunks");
@@ -351,12 +279,12 @@
 				console.log("Channel state: " + e.type);
 				if (e.type == "open") {
 					if (!self.isInitiator) {
-						self.requestChunks();
+						self.fileManager.requestChunks();
 					}
 					else {
 						self.animateProgress();
 						self.shareStart = Date.now();
-					}
+					} 
 					//if (self.isInitiator) {
 					//	console.log("Sending packets now...");
 					//	// Ready to communicate data now
@@ -389,7 +317,7 @@
 					var reader = new FileReader();
 					reader.onloadend = function (e) {
 						if (reader.readyState == FileReader.DONE) {
-							self.stageFileData(file.name, file.type, reader.result);
+							self.fileManager.stageLocalFile(file.name, file.type, reader.result);
 							self.fileInput.disabled = "disabled";
 							self.getButton.disabled = "disabled";
 
@@ -405,6 +333,7 @@
 				self.fileInput.disabled = "disabled";
 
 				self.answerShare();
+				self.statusBlink(false);
 				self.connected = true;
 			};
 			this.shareCancelled = function (e) {
@@ -424,6 +353,32 @@
 			this.fileInput.onchange = this.filePicked;
 			this.getButton.onclick = this.shareAccepted;
 			this.cancelButton.onclick = this.shareCancelled;
+		},
+
+		createFileCallbacks: function () {
+		  var self = this;
+		  this.chunkRequestReady = function(chunks) {
+		    //console.log("Requesting chunks: " + n);
+		    var req = JSON.stringify({
+		      action: protocol.REQUEST,
+		      ids: chunks
+		    });
+		    self.send(req);
+		  };
+		  this.transferComplete = function () {
+		    console.log("Last chunk received.");
+		    self.send(JSON.stringify({ action: protocol.DONE }));
+		    self.fileManager.downloadFile();
+		    self.connected = false;
+		    self.reset();
+		  };
+
+		},
+
+		registerFileEvents: function() {
+		  this.fileManager.onrequestready = this.chunkRequestReady;
+		  this.fileManager.onprogress = this.updateProgress;
+		  this.fileManager.ontransfercomplete = this.transferComplete;
 		},
 
 		initProgress: function () {
@@ -468,16 +423,16 @@
 			if (this.available) {
 				this.fileInput.removeAttribute("disabled");
 			}
+			this.statusBlink(false);
 			this.stopProgress();
 			this.updateProgress(0);
+			this.fileManager.clear();
 			this.fileInput.value = "";
 			this.getButton.disabled = "disabled";
 			this.cancelButton.disabled = "disabled";
 			this.getButton.innerHTML = "Get File";
 			this.isInitiator = false;
 			this.connected = false;
-			this.fileName = null;
-			this.buffer = null;
 			delete this.dataChannel;
 			this.peerConn.close();
 			delete this.peerConn;
