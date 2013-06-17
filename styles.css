@@ -51,6 +51,15 @@ button {
   background: #E85851;
   color: #EEEBE4;
   font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #E82A10;
+}
+
+button:active {
+  background: #E85851;
 }
 
 button[disabled="disabled"] {
@@ -212,6 +221,7 @@ body {
 	line-height: 28px;
 	font-size: 25px;
 	color: grey;
+  max-width: 200px;
 }
 
 .confirm-name-area {
