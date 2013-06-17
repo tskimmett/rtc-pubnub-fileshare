@@ -11,6 +11,7 @@
 		CANCEL: "cancel"
 	};
 	var IS_CHROME = !!window.webkitRTCPeerConnection;
+	var USING_GOOGLE = false;
 
 	if (IS_CHROME) {
 		RTCPeerConnection = webkitRTCPeerConnection;
@@ -161,7 +162,7 @@
 				if (conn) {
 					conn.handlePresence(msg);
 				}
-				else if (!HOSTED && msg.uuid !== this.uuid && msg.action === "join") {
+				else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.action === "join") {
 					var template = _.template($("#contact-template").html().trim());
 					var email = msg.uuid;
 					console.log(msg.action == "join");
@@ -225,5 +226,6 @@
 
 	googleLogin.click(function (event) {
 		client.obtainGoogleToken();
+		USING_GOOGLE = true;
 	});
 })();
