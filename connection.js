@@ -29,7 +29,7 @@
     this.localIceCandidates = [];
     this.remoteIceCandidates = [];
 
-    this.fileManager = new FileManager();
+    this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
 
     // Create event callbacks
     this.createPeerConnCallbacks();
@@ -179,7 +179,10 @@
     handleSignal: function (msg) {
       //console.log(msg);
       if (msg.action === protocol.ANSWER) {
-        this.p2pSetup();
+        console.log("THE OTHER PERSON IS READY");
+        setTimeout(function () {
+          this.p2pSetup();
+        }.bind(this), 5000);
       }
       else if (msg.action === protocol.OFFER) {
         // Someone is ready to send file data. Let user opt-in to receive file data
@@ -207,10 +210,10 @@
         this.available = true;
         this.element.setAttribute("data-available", "true");
         this.fileInput.removeAttribute("disabled");
-        if (!this.peerConn) {
-          this.peerConn = new RTCPeerConnection(this.pcConfiguration, this.pcOpt);
-          this.registerPeerConnEvents();
-        }
+        //if (!this.peerConn) {
+        //  this.peerConn = new RTCPeerConnection(this.pcConfiguration, this.pcOpt);
+        //  this.registerPeerConnEvents();
+        //}
         var j = $(this.element);
         j.prependTo(j.parent());
       }
@@ -218,7 +221,7 @@
         this.available = false;
         this.statusBlink(false);
         this.element.setAttribute("data-available", "false");
-        this.fileInput.disabled = "disabled";
+        this.fileInput.setAttribute("disabled", "disabled");
         if (this.connected) {
           alert(this.email + " has canceled the share.");
           this.reset();
@@ -230,9 +233,9 @@
 
     p2pSetup: function () {
       console.log("Setting up P2P...");
-      //if (!this.isInitiator) {
+      if (!this.isInitiator) {
         this.pubnub.createP2PConnection(this.email);
-      //}
+      }
       this.pubnub.subscribe({
         user: this.email,
         callback: this.onChannelMessage
@@ -308,8 +311,8 @@
 
     createChannelCallbacks: function () {
       var self = this;
-      this.onChannelMessage = function (msg) {
-        var data = JSON.parse(msg.data);
+      this.onChannelMessage = function (data) {
+        data = JSON.parse(data);
         if (data.action === protocol.DATA) {
           self.fileManager.receiveChunk(data);
         }
@@ -321,7 +324,6 @@
         }
         else if (data.action === protocol.DONE) {
           self.connected = false;
-          self.dataChannel.close();
           self.reset();
           alert("Share took " + ((Date.now() - self.shareStart) / 1000) + " seconds");
         }
@@ -370,8 +372,8 @@
           reader.onloadend = function (e) {
             if (reader.readyState == FileReader.DONE) {
               self.fileManager.stageLocalFile(file.name, file.type, reader.result);
-              self.fileInput.disabled = "disabled";
-              self.getButton.disabled = "disabled";
+              self.fileInput.setAttribute("disabled", "disabled");
+              self.getButton.setAttribute("disabled", "disabled");
               self.cancelButton.removeAttribute("disabled");
 
               self.offerShare();
@@ -481,8 +483,8 @@
       this.updateProgress(0);
       this.fileManager.clear();
       this.fileInput.value = "";
-      this.getButton.disabled = "disabled";
-      this.cancelButton.disabled = "disabled";
+      this.getButton.setAttribute("disabled", "disabled");
+      this.cancelButton.setAttribute("disabled", "disabled");
       this.getButton.innerHTML = "Get File";
       this.isInitiator = false;
       this.connected = false;

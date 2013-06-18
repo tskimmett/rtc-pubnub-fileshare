@@ -116,8 +116,9 @@
               });
             }
           }, function (err) {
-            // Maybe notify the peer that we can't communicate
-            error("Error setting remote description: " + err.message);
+            // Communication failed
+            error(err);
+            delete PEER_CONNECTIONS[message.uuid];
           });
         } else {
           if (connection.connection.remoteDescription != null && connection.connection.iceConnectionState !== "connected") {
@@ -223,7 +224,7 @@
           pc.createOffer(function (description) {
             self.gotDescription(description, PEER_CONNECTIONS[uuid]);
           }, function (err) {
-            error(err);
+            throw err;
           });
         }
       } else {

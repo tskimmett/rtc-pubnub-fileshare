@@ -1,7 +1,7 @@
-﻿function FileManager() {
+﻿function FileManager(chunkSize) {
   this.fileName = null;
   this.buffer = null;
-  this.chunkSize = (IS_CHROME ? 800 : 50000);
+  this.chunkSize = chunkSize;
   this.fileChunks = [];
   this.missingChunks = [];
   this.numRequested = 0;
