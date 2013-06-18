@@ -1,4 +1,4 @@
-﻿﻿(function () {
+﻿(function () {
 	var HOSTED = window.location.protocol !== "file:";
 	var protocol = {
 		CHANNEL: "get-my-file2",
@@ -75,7 +75,7 @@
 				var params = {
 					response_type: "token",
 					client_id: "999382287610.apps.googleusercontent.com",
-					redirect_uri: "http://localhost:27601/rtc-pubnub-fileshare/index.html",
+					redirect_uri: window.location.href,
 					scope: CONTACT_API_URL
 				};
 				var query = [];
@@ -139,7 +139,7 @@
 			**/
 			handleSignal: function (msg) {
 				var self = this;
-				console.log(msg);
+				console.log("Main: ", msg);
 				// Don't care about messages we send
 				if (msg.uuid !== this.uuid && msg.target === this.uuid) {
 					var targetConnection = self.connections[msg.uuid];
@@ -156,7 +156,7 @@
 			},
 
 			handlePresence: function (msg) {
-				console.log(msg);
+				console.log("Main: ", msg);
 				// Only care about presence messages from people in our Google contacts (if HOSTED)
 				var conn = this.connections[msg.uuid];
 				if (conn) {

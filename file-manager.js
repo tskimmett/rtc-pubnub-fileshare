@@ -63,6 +63,7 @@ FileManager.prototype = {
   },
 
   requestChunks: function () {
+    console.log("FManager: requestChunks");
     var self = this;
     var chunks = [];
     var n = 0;

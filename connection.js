@@ -26,13 +26,10 @@
     this.shareStart = null;
     this.uuid = uuid;
     this.pubnub = pubnub;
-    this.localIceCandidates = [];
-    this.remoteIceCandidates = [];
 
     this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
 
     // Create event callbacks
-    this.createPeerConnCallbacks();
     this.createChannelCallbacks();
     this.createUICallbacks();
     this.createFileCallbacks();
@@ -113,45 +110,6 @@
       return newSDP;
     },
 
-    receiveDesc: function (msg) {
-      var self = this;
-      var desc = msg.desc;
-      console.log(desc.type + " received.");
-      this.peerConn.setRemoteDescription(new RTCSessionDescription(desc), function () {
-        console.log("remoteDescription set");
-        console.log(self.peerConn.remoteDescription);
-        for (var i in self.remoteIceCandidates) {
-          self.peerConn.addIceCandidate(self.remoteIceCandidates[i]);
-        }
-        if (desc.type == protocol.OFFER) {
-          // Someone is ready to send file data. Let user opt-in to receive file data
-          self.getButton.removeAttribute("disabled");
-          self.cancelButton.removeAttribute("disabled");
-          self.fileInput.disabled = "disabled";
-
-          self.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
-
-          self.getButton.innerHTML = "Get: " + msg.fName;
-          self.statusBlink(true);
-        }
-        else if (desc.type == protocol.ANSWER) {
-          // Someone is ready to receive my data.
-          self.fileInput.setAttribute("disabled", "disabled");
-        }
-      }, function (err) {
-        console.log("Could not setRemoteDescription: " + JSON.stringify(err));
-        self.pubnub.publish({
-          channel: protocol.CHANNEL,
-          message: {
-            uuid: self.uuid,
-            action: protocol.ERR_REJECT,
-            target: self.email
-          }
-        });
-        self.reset();
-      });
-    },
-
     statusBlink: function (on) {
       var indicator = $(this.element.querySelector(".status"));
       if (!on) {
@@ -168,21 +126,11 @@
       }, 700);
     },
 
-    receiveICE: function (candidate) {
-      var candidate = new RTCIceCandidate(candidate);
-      this.remoteIceCandidates.push(candidate);
-      if (this.peerConn.remoteDescription) {
-        this.peerConn.addIceCandidate(candidate);
-      }
-    },
-
     handleSignal: function (msg) {
       //console.log(msg);
       if (msg.action === protocol.ANSWER) {
         console.log("THE OTHER PERSON IS READY");
-        setTimeout(function () {
-          this.p2pSetup();
-        }.bind(this), 5000);
+        this.p2pSetup();
       }
       else if (msg.action === protocol.OFFER) {
         // Someone is ready to send file data. Let user opt-in to receive file data
@@ -241,72 +189,16 @@
         callback: this.onChannelMessage
       });
       var self = this;
-      this.pubnub.history({
-        user: this.email,
-        callback: function (messages) {
-          console.log("History: " + messages);
-          messages = messages[0];
-          messages.forEach(self.onChannelMessage);
-        }
-      });
+      //this.pubnub.history({
+      //  user: this.email,
+      //  callback: function (messages) {
+      //    console.log("History: " + messages);
+      //    messages = messages[0];
+      //    messages.forEach(self.onChannelMessage);
+      //  }
+      //});
       this.animateProgress();
       this.shareStart = Date.now();
-    },
-    createPeerConnCallbacks: function () {
-      var self = this;
-      this.iceCallback = function (e) {
-        //console.log("Local ICE candidate found.");
-        self.pubnub.publish({
-          channel: protocol.CHANNEL,
-          message: {
-            uuid: self.uuid,
-            candidate: e.candidate,
-            target: self.email
-          }
-        });
-      };
-      this.dataChannelCreated = function (e) {
-        console.log("Data channel created by remote peer.");
-        self.dataChannel = e.channel;
-        self.registerChannelEvents();
-      };
-      this.onDescAvail = function (sessionDesc) {
-        console.log("My session description is now available. Sending over wire.");
-        /***
-					CHROME HACK TO GET AROUND BANDWIDTH ISSUES
-				 ***/
-        sessionDesc.sdp = this.transformOutgoingSdp(sessionDesc.sdp);
-
-        // Set the peer connection's local session description
-        self.peerConn.setLocalDescription(sessionDesc, function () {
-          console.log("localDescription set");
-        }, function (err) {
-          console.log("Could not set localDescription: " + err);
-        });
-        self.cancelButton.removeAttribute("disabled");
-        self.connected = true;
-        // Send session description over wire via PubNub
-        var msg = {
-          uuid: self.uuid,
-          desc: sessionDesc,
-          target: self.email
-        };
-        if (self.isInitiator) {
-          msg.fName = self.fileManager.fileName;
-          msg.fType = self.fileManager.fileType;
-          msg.nChunks = self.fileManager.fileChunks.length;
-        }
-        self.pubnub.publish({
-          channel: protocol.CHANNEL,
-          message: msg
-        });
-      };
-    },
-
-    registerPeerConnEvents: function () {
-      this.peerConn.onicecandidate = this.iceCallback.bind(this);
-      this.peerConn.ondatachannel = this.dataChannelCreated.bind(this);
-      console.log("PeerConnection events registered.");
     },
 
     createChannelCallbacks: function () {
@@ -328,39 +220,6 @@
           alert("Share took " + ((Date.now() - self.shareStart) / 1000) + " seconds");
         }
       };
-
-      this.onChannelReadyStateChange = function (e) {
-        console.log("Channel state: " + e.type);
-        if (e.type == "open") {
-          if (!self.isInitiator) {
-            self.fileManager.requestChunks();
-          }
-          else {
-            self.animateProgress();
-            self.shareStart = Date.now();
-          }
-          //if (self.isInitiator) {
-          //	console.log("Sending packets now...");
-          //	// Ready to communicate data now
-          //	self.shareStart = Date.now();
-          //	self.animateProgress();
-          //	for (var chunk in self.fileChunks) {
-          //		self.send(self.packageChunk(chunk));
-          //	}
-          //}
-        }
-        else if (e.type === "closed" || e.type === "error" && self.connected) {
-          alert("A communication error occurred. Sorry.");
-          self.reset();
-        }
-      };
-    },
-
-    registerChannelEvents: function () {
-      this.dataChannel.onmessage = this.onChannelMessage;
-      this.dataChannel.onopen = this.onChannelReadyStateChange;
-      this.dataChannel.onclose = this.onChannelReadyStateChange;
-      console.log("DataChannel events registered.");
     },
 
     createUICallbacks: function () {
@@ -469,12 +328,14 @@
         }, 500);
       };
       this.stopProgress = function () {
+        //console.log("STOPPING PROGRESS: " + interval);
         clearInterval(interval);
       };
 
     },
 
     reset: function () {
+      //console.log("RESETTING");
       if (this.available) {
         this.fileInput.removeAttribute("disabled");
       }
@@ -488,13 +349,6 @@
       this.getButton.innerHTML = "Get File";
       this.isInitiator = false;
       this.connected = false;
-      //delete this.dataChannel;
-      //this.peerConn.close();
-      //delete this.peerConn;
-      //this.localIceCandidates = [];
-      //this.remoteIceCandidates = [];
-      //this.peerConn = new RTCPeerConnection(this.pcConfiguration, (IS_CHROME ? this.pcOpt : {}));
-      //this.registerPeerConnEvents();
     }
 
   }
