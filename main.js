@@ -225,7 +225,7 @@
     //}).done(function (res) {
     //	console.log(res);
     //});
-    this.getContacts();
+    client.getContacts();
     return;
   }
 })();
