@@ -250,8 +250,8 @@
       };
       this.shareAccepted = function (e) {
         // Once we're receiving data, we can't initiate anymore streaming
-        self.getButton.disabled = "disabled";
-        self.fileInput.disabled = "disabled";
+        self.getButton.setAttribute("disabled", "disabled");
+        self.fileInput.setAttribute("disabled", "disabled");
 
         self.answerShare();
         self.statusBlink(false);
