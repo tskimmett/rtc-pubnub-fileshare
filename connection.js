@@ -26,7 +26,7 @@
     this.shareStart = null;
     this.uuid = uuid;
     this.pubnub = pubnub;
-
+    this.nChunksSent = 0;
     this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
 
     // Create event callbacks
@@ -102,12 +102,6 @@
         id: chunkId,
         content: Base64Binary.encode(this.fileManager.fileChunks[chunkId])
       });
-    },
-
-    transformOutgoingSdp: function (sdp) {
-      var splitted = sdp.split("b=AS:30");
-      var newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
-      return newSDP;
     },
 
     statusBlink: function (on) {
@@ -210,6 +204,8 @@
         }
         else if (data.action === protocol.REQUEST) {
           //console.log("Peer requesting chunks");
+          self.nChunksSent += data.ids.length;
+          self.updateProgress(self.nChunksSent / self.fileManager.fileChunks.length);
           data.ids.forEach(function (id) {
             self.send(self.packageChunk(id));
           });
@@ -227,6 +223,17 @@
       this.filePicked = function (e) {
         var file = self.fileInput.files[0];
         if (file) {
+          var mbSize = file.size / (1024 * 1024);
+          if (mbSize > 200) {
+            alert("Due to browser memory limitations, files greater than 200 MiB are unsupported. Your file is " + mbSize.toFixed(2) + " MiB.");
+            var newInput = document.createElement("input");
+            newInput.type = "file";
+            newInput.className = "share";
+            self.element.replaceChild(newInput, self.fileInput);
+            self.fileInput = newInput;
+            self.registerUIEvents();
+            return;
+          }
           var reader = new FileReader();
           reader.onloadend = function (e) {
             if (reader.readyState == FileReader.DONE) {
@@ -343,6 +350,7 @@
       this.stopProgress();
       this.updateProgress(0);
       this.fileManager.clear();
+      this.nChunksSent = 0;
       this.fileInput.value = "";
       this.getButton.setAttribute("disabled", "disabled");
       this.cancelButton.setAttribute("disabled", "disabled");

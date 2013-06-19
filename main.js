@@ -76,7 +76,7 @@
             "max-results": 100
           }
         }).done(function (res) {
-          self.uuid = res.feed.author[0].email["$t"];
+          self.uuid = res.feed.author[0].email["$t"].toLowerCase();
           $(".my-email").html(self.uuid);
           pubnub = PUBNUB.init({
             publish_key: 'pub-c-b2d901ee-2a0f-4d89-8cd3-63039aa6dd90',
@@ -98,7 +98,7 @@
             if (!e["gd$email"]) {
               return;
             }
-            email = e["gd$email"][0].address;
+            email = e["gd$email"][0].address.toLowerCase();
             if (self.uuid === email) {
               //return;
             }
