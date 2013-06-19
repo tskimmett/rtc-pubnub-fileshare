@@ -218,6 +218,7 @@
   if (params.access_token) {
     window.location.hash = "";
     client.getContacts(params.access_token);
+    $(".login-area").fadeOut();
     return;
   }
 })();
