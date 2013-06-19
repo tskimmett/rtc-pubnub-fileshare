@@ -178,12 +178,16 @@
 
   confirm.click(function () {
     $(".login-area").fadeOut();
-    client.localLogin(input.val());
+    client.localLogin(input.val().replace(/^\s\s*/, '').replace(/\s\s*$/, ''));
   });
 
   input.on("input", function () {
-    var curr = $(this).val();
-    curr = curr.replace(/\W/g, "");
+    var curr = $(this).val(),
+        split = curr.split(/\s/);
+    for (var i = 0, len = split.length; i < len; i++) {
+      split[i] = split[i].replace(/\W/g, "");
+    }
+    curr = split.join(" ");
     $(this).val(curr);
     if (curr.length > 2 && curr.length < 20) {
       if (curr.length >= 3 || curr.length <= 19) {
