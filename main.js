@@ -64,7 +64,8 @@
         window.open("https://accounts.google.com/o/oauth2/auth?" + query, "_self");
       },
 
-      getContacts: function () {
+      getContacts: function (token) {
+        this.token = token;
         var self = this;
         $.ajax({
           url: CONTACT_API_URL + "/contacts/default/full",
@@ -216,16 +217,7 @@
 
   if (params.access_token) {
     window.location.hash = "";
-    this.token = params.access_token;
-    //$.ajax({
-    //	url: "https://www.googleapis.com/oauth2/v1/tokeninfo",
-    //	data: {
-    //		access_token: this.token
-    //	}
-    //}).done(function (res) {
-    //	console.log(res);
-    //});
-    client.getContacts();
+    client.getContacts(params.access_token);
     return;
   }
 })();
