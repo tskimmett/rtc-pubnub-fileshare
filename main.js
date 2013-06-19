@@ -75,7 +75,7 @@
 				var params = {
 					response_type: "token",
 					client_id: "999382287610.apps.googleusercontent.com",
-					redirect_uri: window.location.href,
+					redirect_uri: "http://tskimmett.github.io/rtc-pubnub-fileshare/index.html",
 					scope: CONTACT_API_URL
 				};
 				var query = [];
