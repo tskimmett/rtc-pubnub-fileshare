@@ -217,6 +217,7 @@
 
   if (params.access_token) {
     window.location.hash = "";
+    USING_GOOGLE = true;
     client.getContacts(params.access_token);
     $(".login-area").fadeOut();
     return;
