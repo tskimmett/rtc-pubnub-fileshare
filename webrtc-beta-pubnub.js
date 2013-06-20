@@ -86,7 +86,7 @@
       this.send = function (message) {
         message.uuid = selfUuid;
         message = JSON.stringify(message);
-        //debug("Sending", message, otherUuid);
+        debug("Sending", message, otherUuid);
         pubnub.publish({
           channel: PREFIX + otherUuid,
           message: message
