@@ -60,7 +60,11 @@ var DEBUG;
     var API = {},
         PREFIX = "pn_",               // Prefix for subscribe channels
         PEER_CONNECTIONS = {},        // Connection storage by uuid
-        RTC_CONFIGURATION = { 'iceServers': [{ 'url': (IS_CHROME ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121') }] },     // Global config for RTC's
+        RTC_CONFIGURATION = {
+          iceServers: [
+            { 'url': (IS_CHROME ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121') }
+          ]
+        },     // Global config for RTC's
         PC_OPTIONS = (IS_CHROME ? {
           optional: [
           { RtpDataChannels: true }
@@ -164,7 +168,6 @@ var DEBUG;
     // PUBNUB._gotDescription
     // This is the handler for when we get a SDP description from the WebRTC API.
     API['gotDescription'] = function (description, connection) {
-      debug("gotDescription");
       /***
        * CHROME HACK TO GET AROUND BANDWIDTH LIMITATION ISSUES
        ***/
@@ -185,7 +188,6 @@ var DEBUG;
       }
       
       if (PEER_CONNECTIONS[uuid] == null || PEER_CONNECTIONS[uuid].initialized === false) {
-        debug("Creating PeerConnection");
         var pc = new RTCPeerConnection(RTC_CONFIGURATION, PC_OPTIONS),
             signalingChannel = new SignalingChannel(this, UUID, uuid),
             self = this;
@@ -254,7 +256,6 @@ var DEBUG;
             channel: dc
           });
 
-          debug("Calling createOffer");
           pc.createOffer(function (description) {
             self.gotDescription(description, PEER_CONNECTIONS[uuid]);
           }, function (err) {

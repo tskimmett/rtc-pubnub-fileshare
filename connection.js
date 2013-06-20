@@ -26,7 +26,6 @@
     this.shareStart = null;
     this.uuid = uuid;
     this.pubnub = pubnub;
-    this.nChunksSent = 0;
     this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
 
     // Create event callbacks
@@ -205,7 +204,7 @@
         else if (data.action === protocol.REQUEST) {
           //console.log("Peer requesting chunks");
           self.nChunksSent += data.ids.length;
-          self.updateProgress(self.nChunksSent / self.fileManager.fileChunks.length);
+          self.updateProgress(data.nReceived / self.fileManager.fileChunks.length);
           data.ids.forEach(function (id) {
             self.send(self.packageChunk(id));
           });
@@ -282,7 +281,8 @@
         //console.log("Requesting chunks: " + n);
         var req = JSON.stringify({
           action: protocol.REQUEST,
-          ids: chunks
+          ids: chunks,
+          nReceived: self.fileManager.nChunksReceived
         });
         self.send(req);
       };
@@ -350,7 +350,6 @@
       this.stopProgress();
       this.updateProgress(0);
       this.fileManager.clear();
-      this.nChunksSent = 0;
       this.fileInput.value = "";
       this.getButton.setAttribute("disabled", "disabled");
       this.cancelButton.setAttribute("disabled", "disabled");
