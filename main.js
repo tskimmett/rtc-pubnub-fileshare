@@ -181,6 +181,12 @@
     client.localLogin(input.val().replace(/^\s\s*/, '').replace(/\s\s*$/, ''));
   });
 
+  input.on("keyup", function (e) {
+    if (e.which === 13) {
+      confirm.click();
+    }
+  });
+
   input.on("input", function () {
     var curr = $(this).val(),
         split = curr.split(/\s/);
