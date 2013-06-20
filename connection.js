@@ -107,7 +107,7 @@
       var indicator = $(this.element.querySelector(".status"));
       if (!on) {
         clearInterval(this.blink);
-        //indicator.css("background-color", (this.available ? "limegreen" : "red"));
+        indicator.css("background-color", (this.available ? "limegreen" : "red"));
         return;
       }
       var white = true;
@@ -182,14 +182,14 @@
         callback: this.onChannelMessage
       });
       var self = this;
-      this.pubnub.history({
-        user: this.email,
-        callback: function (messages) {
-          console.log("History: " + messages);
-          messages = messages[0];
-          messages.forEach(self.onChannelMessage);
-        }
-      });
+      //this.pubnub.history({
+      //  user: this.email,
+      //  callback: function (messages) {
+      //    console.log("History: " + messages);
+      //    messages = messages[0];
+      //    messages.forEach(self.onChannelMessage);
+      //  }
+      //});
       this.animateProgress();
       this.shareStart = Date.now();
     },
