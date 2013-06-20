@@ -118,7 +118,7 @@
 			**/
       handleSignal: function (msg) {
         var self = this;
-        console.log("Main: ", msg);
+        //console.log("Main: ", msg);
         // Don't care about messages we send
         if (msg.uuid !== this.uuid && msg.target === this.uuid) {
           var targetConnection = self.connections[msg.uuid];
@@ -135,7 +135,7 @@
       },
 
       handlePresence: function (msg) {
-        console.log("Main: ", msg);
+        //console.log("Main: ", msg);
         // Only care about presence messages from people in our Google contacts (if HOSTED)
         var conn = this.connections[msg.uuid];
         if (conn) {

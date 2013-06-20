@@ -86,7 +86,7 @@
       this.send = function (message) {
         message.uuid = selfUuid;
         message = JSON.stringify(message);
-        debug("Sending", message, otherUuid);
+        //debug("Sending", message, otherUuid);
         pubnub.publish({
           channel: PREFIX + otherUuid,
           message: message
@@ -162,6 +162,7 @@
     // PUBNUB._gotDescription
     // This is the handler for when we get a SDP description from the WebRTC API.
     API['gotDescription'] = function (description, connection) {
+      debug("gotDescription");
       /***
        * CHROME HACK TO GET AROUND BANDWIDTH LIMITATION ISSUES
        ***/
@@ -180,8 +181,9 @@
         CONNECTION_QUEUE.push([uuid, offer]);
         return false;
       }
-
+      
       if (PEER_CONNECTIONS[uuid] == null || PEER_CONNECTIONS[uuid].initialized === false) {
+        debug("Creating PeerConnection");
         var pc = new RTCPeerConnection(RTC_CONFIGURATION, PC_OPTIONS),
             signalingChannel = new SignalingChannel(this, UUID, uuid),
             self = this;
@@ -250,6 +252,7 @@
             channel: dc
           });
 
+          debug("Calling createOffer");
           pc.createOffer(function (description) {
             self.gotDescription(description, PEER_CONNECTIONS[uuid]);
           }, function (err) {
