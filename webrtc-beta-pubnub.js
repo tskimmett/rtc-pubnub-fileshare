@@ -1,4 +1,3 @@
-var DEBUG;
 (function (window, PUBNUB) {
   //"use strict";
 
@@ -78,7 +77,6 @@ var DEBUG;
           STREAM: 1,
           MESSAGE: 2
         };
-    DEBUG = PEER_CONNECTIONS;
 
     // Expose PUBNUB UUID (Need to fix this in core)
     PUBNUB['UUID'] = uuid;
@@ -171,7 +169,9 @@ var DEBUG;
       /***
        * CHROME HACK TO GET AROUND BANDWIDTH LIMITATION ISSUES
        ***/
-      description.sdp = transformOutgoingSdp(description.sdp);
+      if (IS_CHROME) {
+        description.sdp = transformOutgoingSdp(description.sdp);
+      }
       connection.connection.setLocalDescription(description);
       debug("Sending description", connection.signalingChannel);
       connection.signalingChannel.send({
