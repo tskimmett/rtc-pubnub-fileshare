@@ -109,7 +109,7 @@
 	            self.uuid, pubnub);
           });
 
-          $(".contact-list").animate({ marginTop: "20px" }, 700);
+          $(".contact-list").animate({ marginTop: "35px" }, 700);
         });
       },
 
@@ -152,7 +152,7 @@
 	          document.getElementById("contact-" + email),
 	          this.uuid, pubnub);
           this.connections[email].handlePresence(msg);
-          $(".contact-list").animate({ marginTop: "20px" }, 700);
+          $(".contact-list").animate({ marginTop: "35px" }, 700);
         }
       }
     };

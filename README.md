@@ -1,14 +1,18 @@
 rtc-pubnub-fileshare
 ====================
-This is a demo which allows users to share files with each other using Peer-to-peer connections via WebRTC DataChannel. All signaling and connection negotiation is accomplished using PubNub.
+This is a demo which allows users to share files with each other using Peer-to-peer connections via WebRTC DataChannel. All signaling and connection negotiation is accomplished using PubNub via their [beta WebRTC API](https://github.com/pubnub/webrtc).
+
+Features
+---------------
+"Common-room" version where users choose a name and can see and share files with everyone using the demo.
+
+Google login version where users login with Google and can share files with anyone in their Google contacts who is using the demo.
 
 Use
-----------
-The demo can be run from your local filesystem or from an actual web server.
+---------------
+The demo can be run from your local filesystem or from an actual web server. But the easiest way to see the demo in action is via the [GitHub page](http://tskimmett.github.io/rtc-pubnub-fileshare).
 
-If you run it on a web server, the app will pull your Google contacts in using OAUTH 2. Then if anyone in your Google contacts starts using the demo, you'll be able to share files with them.
-
-If you run it on your local filesystem, then everyone using the demo will simply be in the same "room" and can share files with each other.
+**Note:** the Google login functionality will be unavailable if running the demo from your local filesystem or your own webserver, *unless* you edit the code to change the Google OAUTH2 parameters to use your own API key.
 
 Browser Support
 ---------------
