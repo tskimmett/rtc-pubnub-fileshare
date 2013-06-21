@@ -60,6 +60,9 @@
 
   function transformOutgoingSdp(sdp) {
     var splitted = sdp.split("b=AS:30");
+    if (splitted.length === 1) {
+      return sdp;
+    }
     var newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
     return newSDP;
   }
