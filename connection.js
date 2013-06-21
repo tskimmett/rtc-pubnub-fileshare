@@ -174,9 +174,9 @@
 
     p2pSetup: function () {
       console.log("Setting up P2P...");
-      if (!this.isInitiator) {
-        this.pubnub.createP2PConnection(this.email);
-      }
+      //if (!this.isInitiator) {
+      //  this.pubnub.createP2PConnection(this.email);
+      //}
       this.pubnub.subscribe({
         user: this.email,
         callback: this.onChannelMessage
@@ -197,7 +197,8 @@
     createChannelCallbacks: function () {
       var self = this;
       this.onChannelMessage = function (data) {
-        data = JSON.parse(data);
+        //data = JSON.parse(data);
+        console.log("P2P message: ", data);
         if (data.action === protocol.DATA) {
           self.fileManager.receiveChunk(data);
         }
