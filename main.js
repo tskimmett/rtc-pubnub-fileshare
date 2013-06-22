@@ -29,6 +29,7 @@
     var pubnub;
     function FSClient() {
       this.connections = {};
+      this.contactEmails = {};
     };
 
     FSClient.prototype = {
@@ -67,15 +68,16 @@
       getContacts: function (token) {
         this.token = token;
         var self = this;
-        $.ajax({
+        var req = {
           url: CONTACT_API_URL + "/contacts/default/full",
           data: {
             access_token: this.token,
             v: 3.0,
             alt: "json",
-            "max-results": 100
+            "max-results": 10000
           }
-        }).done(function (res) {
+        };
+        var handleRes = function (res) {
           self.uuid = res.feed.author[0].email["$t"].toLowerCase();
           $(".my-email").html(self.uuid);
           pubnub = PUBNUB.init({
@@ -91,26 +93,35 @@
           });
 
           var contacts = res.feed.entry;
-          var email, c;
+          var email, c, numShown = 0;
           var list = $(".contact-list");
           var template = _.template($("#contact-template").html().trim());
+          console.log(res);
           contacts.forEach(function (e) {
             if (!e["gd$email"]) {
               return;
             }
             email = e["gd$email"][0].address.toLowerCase();
+            self.contactEmails[email] = true;
             if (self.uuid === email) {
               //return;
             }
-            c = template({ email: email, available: false });
-            list.append($(c));
-            self.connections[email] = new Connection(email,
-	            document.getElementById("contact-" + email),
-	            self.uuid, pubnub);
+            if (numShown < 25) {
+              c = template({ email: email, available: false });
+              list.append($(c));
+              self.connections[email] = new Connection(email,
+                document.getElementById("contact-" + email),
+                self.uuid, pubnub);
+              numShown++;
+            }
           });
-
           $(".contact-list").animate({ marginTop: "35px" }, 700);
-        });
+          if (res.next) {
+            req.url = res.next;
+            $.ajax(req).done(handleRes);
+          }
+        }
+        $.ajax(req).done(handleRes);
       },
 
       /**
@@ -141,6 +152,15 @@
         if (conn) {
           conn.handlePresence(msg);
         }
+        else if (this.contactEmails[msg.uuid] && msg.action === "join") {
+          var email = msg.uuid;
+          var list = $(".contact-list");
+          var template = _.template($("#contact-template").html().trim());
+          list.prepend($(template({ email: email, available: true })));
+          this.connections[email] = new Connection(email,
+            document.getElementById("contact-" + email),
+            this.uuid, pubnub);
+        }
         else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.action === "join") {
           var template = _.template($("#contact-template").html().trim());
           var email = msg.uuid;
@@ -162,7 +182,6 @@
 
   var client = createFSClient();
 
-  $(".login-area").fadeIn();
   var confirm = $(".confirm-name");
   var confirmArea = $(".confirm-name-area");
   var input = $(".name-input");
@@ -229,7 +248,9 @@
     window.location.hash = "";
     USING_GOOGLE = true;
     client.getContacts(params.access_token);
-    $(".login-area").fadeOut();
     return;
+  }
+  else {
+    $(".login-area").fadeIn();
   }
 })();

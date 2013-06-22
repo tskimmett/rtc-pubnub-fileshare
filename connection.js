@@ -107,7 +107,8 @@
       var indicator = $(this.element.querySelector(".status"));
       if (!on) {
         clearInterval(this.blink);
-        indicator.css("background-color", (this.available ? "limegreen" : "red"));
+        //indicator.css("background-color", (this.available ? "limegreen" : "red"));
+        indicator.removeAttr("style");
         return;
       }
       var white = true;
@@ -147,6 +148,7 @@
     },
 
     handlePresence: function (msg) {
+      //console.log("Connection handling presence msg: ", msg);
       if (msg.action === "join") {
         this.available = true;
         this.element.setAttribute("data-available", "true");
