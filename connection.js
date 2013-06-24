@@ -197,7 +197,7 @@
             var self = this;
             this.onChannelMessage = function (data) {
                 //data = JSON.parse(data);
-                console.log("P2P message: ", data);
+                //console.log("P2P message: ", data.action);
                 if (data.action === protocol.DATA) {
                     self.fileManager.receiveChunk(data);
                 }

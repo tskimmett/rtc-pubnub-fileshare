@@ -1,4 +1,5 @@
-﻿(function () {
+﻿var client;
+(function () {
     var HOSTED = window.location.protocol !== "file:";
     var protocol = {
         CHANNEL: "get-my-file2",
@@ -125,8 +126,8 @@
             },
 
             /**
-                      "Signals" are sent via PubNub until the DataChannel is established
-                  **/
+                "Signals" are sent via PubNub until the DataChannel is established
+             **/
             handleSignal: function (msg) {
                 var self = this;
                 //console.log("Main: ", msg);
@@ -180,7 +181,7 @@
     };
 
 
-    var client = createFSClient();
+    client = createFSClient();
 
     var confirm = $(".confirm-name");
     var confirmArea = $(".confirm-name-area");
