@@ -104,7 +104,7 @@
             email = e["gd$email"][0].address.toLowerCase();
             self.contactEmails[email] = true;
             if (self.uuid === email) {
-              //return;
+              return;
             }
             if (numShown < 25) {
               c = template({ email: email, available: false });
