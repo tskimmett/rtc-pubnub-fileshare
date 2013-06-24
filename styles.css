@@ -8,238 +8,251 @@ b, u, i, center,
 dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend,
 table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed, 
-figure, figcaption, footer, header, hgroup, 
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	font-size: 100%;
-	font: inherit;
-	vertical-align: baseline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
 }
 /* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure, 
+article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
-	display: block;
+    display: block;
 }
+
 body {
-	line-height: 1;
+    line-height: 1;
 }
+
 ol, ul {
-	list-style: none;
+    list-style: none;
 }
+
 blockquote, q {
-	quotes: none;
+    quotes: none;
 }
-blockquote:before, blockquote:after,
-q:before, q:after {
-	content: '';
-	content: none;
-}
+
+    blockquote:before, blockquote:after,
+    q:before, q:after {
+        content: '';
+        content: none;
+    }
+
 table {
-	border-collapse: collapse;
-	border-spacing: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 /* End CSS Reset */
 
 /* Global Components */
 button {
-  display: block;
-  border: none;
-  background: #E85851;
-  color: #EEEBE4;
-  font-size: 14px;
-  cursor: pointer;
+    display: block;
+    border: none;
+    background: #E85851;
+    color: #EEEBE4;
+    font-size: 14px;
+    cursor: pointer;
 }
 
-button:hover {
-  background: #E82A10;
-}
+    button:hover {
+        background: #E82A10;
+    }
 
-button:active {
-  background: #E85851;
-}
+    button:active {
+        background: #E85851;
+    }
 
-button[disabled="disabled"] {
-  background: gray;
-  color: #CCC;
-}
+    button[disabled="disabled"] {
+        background: gray;
+        color: #CCC;
+    }
 /* End Global Components */
 
 body {
-	margin: 0px;
-	padding: 0px;
-	height: 100%;
-	width: 100%;
-	position: absolute;
-	font-family: 'Telex', sans-serif;
-  font-weight: bold;
-	background-color: #EEEBE4;
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    font-family: 'Telex', sans-serif;
+    font-weight: bold;
+    background-color: #EEEBE4;
 }
 
 .title {
-  font-family: 'Permanent Marker', sans-serif;
-  font-weight: normal;
-  font-size: 32px;
-  display: block;
-  margin: 0 auto;
-  padding-top: 15px;
-  color: white;
-  display: inline-block;
+    font-family: 'Permanent Marker', sans-serif;
+    font-weight: normal;
+    font-size: 32px;
+    display: block;
+    margin: 0 auto;
+    padding-top: 15px;
+    color: white;
+    display: inline-block;
 }
 
 .component {
-	display: none;
+    display: none;
 }
 
 #download {
-	display: none;
+    display: none;
 }
 
 .top-bar {
-	height: 60px;
-	background-color: #262220;
-	width: 100%;
-	text-align: center;
-	font-size: 28px;
-	color: white;
+    height: 60px;
+    background-color: #262220;
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    color: white;
 }
 
 .my-email {
-	display: inline-block;
-  float: right;
-  padding-top: 18px;
-  padding-right: 15px;
-  position: absolute;
-  right: 15px;
-  top: 0;
+    display: inline-block;
+    float: right;
+    padding-top: 18px;
+    padding-right: 15px;
+    position: absolute;
+    right: 15px;
+    top: 0;
 }
 
 .contact-list {
-	background-color: #262220;
-	margin-left: auto;
-	margin-right: auto;
-	width: 700px;
-	position: relative;
+    background-color: #262220;
+    margin-left: auto;
+    margin-right: auto;
+    width: 700px;
+    position: relative;
 }
 
 .contact {
-	border-bottom: solid 5px #EEEBE4;
-	/*padding: 5px;*/
-	height: 45px;
-  color: #EEEBE4;
+    border-bottom: solid 5px #EEEBE4;
+    /*padding: 5px;*/
+    height: 45px;
+    color: #EEEBE4;
 }
 
-	.contact > * {
-		display: inline-block;
-	}
+    .contact > * {
+        display: inline-block;
+    }
 
-	.contact .email {
-		margin-left: 18px;
-		max-width: 240px;
-		font-weight: bold;
-    display: inline-block;
-    margin-top: 15px;
-	}
+    .contact .email {
+        margin-left: 18px;
+        max-width: 180px;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: 15px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 
-	.contact .share {
-		color: white;
-		margin-top: 12px;
-		float: right;
-	}
+    .contact .share {
+        color: white;
+        margin-top: 12px;
+        float: right;
+    }
 
-	.contact .get {
-		margin-top: 14px;
-		margin-right: 10px;
-		float: right;
-		max-width: 115px;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+    .contact .get {
+        margin-top: 14px;
+        margin-right: 10px;
+        float: right;
+        max-width: 325px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 
-	.contact .cancel {
-		margin-top: 14px;
-		margin-right: 10px;
-		float: right;
-	}
+    .contact .cancel {
+        margin-top: 14px;
+        margin-right: 10px;
+        float: right;
+    }
 
-	.contact .status {
-		height: 45px;
-		width: 10px;
-		/*border-radius: 50%;*/
-		display: inline-block;
-		position: absolute;
-	}
+    .contact .status {
+        height: 45px;
+        width: 10px;
+        /*border-radius: 50%;*/
+        display: inline-block;
+        position: absolute;
+    }
 
-	.contact[data-available=true] .status {
-		background-color: limegreen;
-	}
+    .contact[data-available=true] .status {
+        background-color: limegreen;
+    }
 
-	.contact[data-available=false] .status {
-		background-color: red;
-	}
+    .contact[data-available=false] .status {
+        background-color: red;
+    }
 
-	.contact .progress {
-		float: right;
-		margin-top: 5px;
-		margin-right: 5px;
-	}
+    .contact .progress {
+        float: right;
+        margin-top: 5px;
+        margin-right: 5px;
+    }
 
 /**
 	Login area
  **/
 
 .login-area {
-	display: none;
+    display: none;
 }
 
 .outer-box {
-  background: white;
-	width: 332px;
-	margin-left: auto;
-	margin-right: auto;
-	text-align: center;
-	margin-top: 100px;
+    background: white;
+    width: 332px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    margin-top: 100px;
 }
 
 .register-box {
-	border: solid 1px silver;
-	padding: 15px;
-	width: 300px;
+    border: solid 1px silver;
+    padding: 15px;
+    width: 300px;
 }
 
 .login-head {
-	color: #555;
-	font-size: 28px;
-	margin-bottom: 15px;
+    color: #555;
+    font-size: 28px;
+    margin-bottom: 15px;
 }
 
 .name-input {
-	height: 35px;
-	line-height: 28px;
-	font-size: 25px;
-	color: grey;
-  max-width: 200px;
+    height: 35px;
+    line-height: 28px;
+    font-size: 25px;
+    color: grey;
+    max-width: 200px;
 }
 
 .confirm-name-area {
-	background-color: #E85851;
-	width: 100%;
-	height: 0px;
-  padding-top: 10px;
+    background-color: #E85851;
+    width: 100%;
+    height: 0px;
+    padding-top: 10px;
 }
 
 .confirm-name {
-	font-size: 24px;
-	text-decoration: none;
-	color: white;
-	display: none;
+    font-size: 24px;
+    text-decoration: none;
+    color: white;
+    display: none;
 }
 
 .byline {
-  position: fixed;
-  bottom: 15px;
-  left: 15px;
+    position: fixed;
+    bottom: 15px;
+    left: 15px;
+}
+
+.hidden {
+    display: none;
 }
