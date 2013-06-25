@@ -13,6 +13,7 @@
         CANCEL: "cancel"
     };
     var IS_CHROME = !!window.webkitRTCPeerConnection;
+    var MAX_FSIZE = 200;    // MiB -- browser will crash when trying to bring more than that into memory
 
     function Connection(email, element, uuid, pubnub) {
         this.email = email;
@@ -43,21 +44,11 @@
     };
 
     Connection.prototype = {
-        pcOpt: (IS_CHROME ? {
-            optional: [
-				{ RtpDataChannels: true }
-            ]
-        } : {}),
-
-        // Browser should automatically use proper stun servers
-        pcConfiguration: null,//{ iceServers: [{ url: (IS_CHROME ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121') }] },
-
         offerShare: function () {
             console.log("Offering share...");
             this.isInitiator = true;
 
             this.connected = true;
-            // Send session description over wire via PubNub
             var msg = {
                 uuid: this.uuid,
                 target: this.email,
@@ -189,20 +180,17 @@
                     messages.forEach(self.onChannelMessage);
                 }
             });
-            this.animateProgress();
             this.shareStart = Date.now();
         },
 
         createChannelCallbacks: function () {
             var self = this;
             this.onChannelMessage = function (data) {
-                //data = JSON.parse(data);
-                //console.log("P2P message: ", data.action);
+                console.log("P2P message: ", data.action);
                 if (data.action === protocol.DATA) {
                     self.fileManager.receiveChunk(data);
                 }
                 else if (data.action === protocol.REQUEST) {
-                    //console.log("Peer requesting chunks");
                     self.nChunksSent += data.ids.length;
                     self.updateProgress(data.nReceived / self.fileManager.fileChunks.length);
                     data.ids.forEach(function (id) {
@@ -223,8 +211,8 @@
                 var file = self.fileInput.files[0];
                 if (file) {
                     var mbSize = file.size / (1024 * 1024);
-                    if (mbSize > 200) {
-                        alert("Due to browser memory limitations, files greater than 200 MiB are unsupported. Your file is " + mbSize.toFixed(2) + " MiB.");
+                    if (mbSize > MAX_FSIZE) {
+                        alert("Due to browser memory limitations, files greater than " + MAX_FSIZE + " MiB are unsupported. Your file is " + mbSize.toFixed(2) + " MiB.");
                         var newInput = document.createElement("input");
                         newInput.type = "file";
                         newInput.className = "share";
@@ -278,7 +266,6 @@
         createFileCallbacks: function () {
             var self = this;
             this.chunkRequestReady = function (chunks) {
-                //console.log("Requesting chunks: " + n);
                 var req = JSON.stringify({
                     action: protocol.REQUEST,
                     ids: chunks,
@@ -304,7 +291,6 @@
 
         initProgress: function () {
             var self = this;
-            // SVG stuff
             var ctx = ctx = this.progress.getContext('2d');
             var imd = null;
             var circ = Math.PI * 2;
@@ -326,29 +312,14 @@
                 ctx.arc(18, 18, 7, -(quart), ((circ) * percent) - quart, false);
                 ctx.stroke();
             };
-
-            this.animateProgress = function () {
-                var p = 0;
-                interval = setInterval(function () {
-                    p += 15;
-                    self.updateProgress((p % 100) / 100);
-                }, 500);
-            };
-            this.stopProgress = function () {
-                //console.log("STOPPING PROGRESS: " + interval);
-                clearInterval(interval);
-            };
-
         },
 
         reset: function () {
-            //console.log("RESETTING");
             if (this.available) {
                 this.fileInput.removeAttribute("disabled");
                 $(this.fileInput).removeClass("hidden");
             }
             this.statusBlink(false);
-            this.stopProgress();
             this.updateProgress(0);
             this.fileManager.clear();
             this.fileInput.value = "";

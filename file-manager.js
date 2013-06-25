@@ -7,7 +7,7 @@
     this.numRequested = 0;
     this.requestMax = 90;
     this.requestThreshold = 70;
-    this.expireTime = 2500;
+    this.expireTime = 2000;
     this.nChunksReceived = 0;
     this.nChunksExpected = 0;
 
@@ -63,7 +63,6 @@ FileManager.prototype = {
     },
 
     requestChunks: function () {
-        //console.log("FManager: requestChunks");
         var self = this;
         var chunks = [];
         var n = 0;
@@ -78,11 +77,12 @@ FileManager.prototype = {
         if (!n) {
             return;
         }
-        //console.log("Requesting chunks: " + n);
 
-        // This will act as a synchronous return when requestChunks
-        // is called directly from Connection, but asynchronously
-        // when called from the timeout.
+        /***
+         * This will act as a synchronous return when requestChunks
+         * is called directly from Connection, but asynchronously
+         * when called from the timeout.
+         ***/
         this.onrequestready(chunks);
 
         setTimeout(function () {
@@ -95,7 +95,6 @@ FileManager.prototype = {
                     self.missingChunks[id] = true;
                 }
             }
-            //expired > 0 && console.log(expired + " chunks expired. Adding back to missing");
             if (expired && self.numRequested < self.requestThreshold) {
                 self.requestChunks();
             }

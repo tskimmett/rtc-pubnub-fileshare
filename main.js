@@ -1,5 +1,4 @@
-﻿var client;
-(function () {
+﻿(function () {
     var HOSTED = window.location.protocol !== "file:";
     var protocol = {
         CHANNEL: "get-my-file2",
@@ -11,19 +10,7 @@
         ERR_REJECT: "err-reject",
         CANCEL: "cancel"
     };
-    var IS_CHROME = !!window.webkitRTCPeerConnection;
     var USING_GOOGLE = false;
-
-    if (IS_CHROME) {
-        RTCPeerConnection = webkitRTCPeerConnection;
-        //RTCIceCandidate = webkitRTCIceCandidate;
-        //RTCSessionDescription = webkitRTCSessionDescription;
-    }
-    else {
-        RTCPeerConnection = mozRTCPeerConnection;
-        RTCIceCandidate = mozRTCIceCandidate;
-        RTCSessionDescription = mozRTCSessionDescription;
-    }
 
     function createFSClient() {
         var CONTACT_API_URL = "https://www.google.com/m8/feeds";
@@ -130,7 +117,6 @@
              **/
             handleSignal: function (msg) {
                 var self = this;
-                //console.log("Main: ", msg);
                 // Don't care about messages we send
                 if (msg.uuid !== this.uuid && msg.target === this.uuid) {
                     var targetConnection = self.connections[msg.uuid];
@@ -147,7 +133,6 @@
             },
 
             handlePresence: function (msg) {
-                //console.log("Main: ", msg);
                 // Only care about presence messages from people in our Google contacts (if HOSTED)
                 var conn = this.connections[msg.uuid];
                 if (conn) {
@@ -181,7 +166,7 @@
     };
 
 
-    client = createFSClient();
+    var client = createFSClient();
 
     var confirm = $(".confirm-name");
     var confirmArea = $(".confirm-name-area");
@@ -224,8 +209,6 @@
             }
         }
         else {
-            //confirm.stop();
-            //confirmArea.stop();
             if (confirmArea.height() != 0) {
                 confirm.fadeOut();
                 confirmArea.animate({ height: "0px" }, 300);
