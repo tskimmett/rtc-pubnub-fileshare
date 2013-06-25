@@ -148,7 +148,7 @@
                       this.uuid, pubnub);
                     this.connections[email].handlePresence(msg);
                 }
-                else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.action === "join") {
+                else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.uuid.indexOf("@") == -1 && msg.action === "join") {
                     var template = _.template($("#contact-template").html().trim());
                     var email = msg.uuid;
                     console.log(msg.action == "join");

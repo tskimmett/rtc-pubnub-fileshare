@@ -85,7 +85,7 @@ FileManager.prototype = {
          ***/
         this.onrequestready(chunks);
 
-        setTimeout(function () {
+        this.chunkTimeout = setTimeout(function () {
             var expired = 0;
             for (var i in chunks) {
                 var id = chunks[i];
@@ -116,5 +116,6 @@ FileManager.prototype = {
     clear: function () {
         this.fileName = null;
         this.buffer = null;
+        clearTimeout(this.chunkTimeout);
     }
 };
