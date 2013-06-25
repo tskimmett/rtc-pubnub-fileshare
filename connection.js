@@ -137,7 +137,7 @@
         },
 
         handlePresence: function (msg) {
-            //console.log("Connection handling presence msg: ", msg);
+            console.log("Connection handling presence msg: ", msg);
             if (msg.action === "join") {
                 this.available = true;
                 this.element.setAttribute("data-available", "true");

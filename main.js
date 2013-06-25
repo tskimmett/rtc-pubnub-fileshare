@@ -90,10 +90,10 @@
                             return;
                         }
                         email = e["gd$email"][0].address.toLowerCase();
-                        self.contactEmails[email] = true;
                         if (self.uuid === email) {
                             return;
                         }
+                        self.contactEmails[email] = true;
                         if (numShown < 25) {
                             c = template({ email: email, available: false });
                             list.append($(c));
@@ -146,6 +146,7 @@
                     this.connections[email] = new Connection(email,
                       document.getElementById("contact-" + email),
                       this.uuid, pubnub);
+                    this.connections[email].handlePresence(msg);
                 }
                 else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.action === "join") {
                     var template = _.template($("#contact-template").html().trim());
