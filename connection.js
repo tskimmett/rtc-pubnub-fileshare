@@ -164,9 +164,6 @@
 
         p2pSetup: function () {
             console.log("Setting up P2P...");
-            //if (!this.isInitiator) {
-            //    this.pubnub.createP2PConnection(this.email);
-            //}
             this.pubnub.subscribe({
                 user: this.email,
                 callback: this.onChannelMessage
@@ -266,6 +263,7 @@
         createFileCallbacks: function () {
             var self = this;
             this.chunkRequestReady = function (chunks) {
+                console.log("Chunks ready: ", chunks.length);
                 var req = JSON.stringify({
                     action: protocol.REQUEST,
                     ids: chunks,
