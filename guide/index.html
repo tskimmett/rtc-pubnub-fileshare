@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>RTC PubNub Guide</title>
+    <link rel="stylesheet" href="./flat-ui/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="./flat-ui/css/flat-ui.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <!-----------------------------------------------
+     ! INTRODUCTION AND EMBEDDED APP                !
+     !----------------------------------------------->
+    <div class="heading palette palette-turquoise">
+        <h2 class="page-title">RTC PubNub Guide</h2>
+    </div>
+    <div class="row-fluid">
+        <div class="span4 panel">
+            <p class="lead">
+                Welcome to the RTC PubNub how-to guide. This page is dedicated to providing a
+                bit of insight into how we built the PubShare demo. As you can see, the actual
+                demo app is embedded in this page so you can conveniently interact with it
+                as you need while looking over the guide.
+                <br />
+                <br />
+                The PubShare demo was created using PubNub and the WebRTC DataChannel via
+                PubNub's new beta WebRTC API. As you may know already, PubNub allows
+                developers to quickly enable their applications with real-time communication
+                capabilities with minimal effort. But certain scenarios require lower latency
+                and more data throughput than is economically feasible with vanilla PubNub.
+                So we've continued the ease-of-use that comes with PubNub and made our WebRTC
+                API simple to use, especially if you're already familiar with the PubNub
+                JavaScript API.
+            </p>
+        </div>
+        <div class="span8">
+            <iframe class="app-frame" src="http://tskimmett.github.io/rtc-pubnub-fileshare" seamless="seamless"></iframe>
+        </div>
+    </div>
+    <!-----------------------------------------------
+     ! SETTING UP PUBNUB LIBRARIES                  !
+     !----------------------------------------------->
+    <div class="heading palette palette-peter-river r-text">
+        <!--<iframe src="http://ghbtns.com/github-btn.html?user=pubnub&repo=webrtc&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95" height="20"></iframe>-->
+        <h2 class="page-title">Setup</h2>
+    </div>
+    <div class="row-fluid palette-silver">
+        <div class="span7 panel">
+            <div class="centered">
+                <pre class="prettyprint">
+&lt;script src="http://cdn.pubnub.com/pubnub-3.5.1.min.js"&gt;&lt;/script&gt;
+&lt;script src="./webrtc-beta-pubnub.js"&gt;&lt;/script&gt;</pre>
+                <div class="tooltip right fade in" style="display: inline-block; margin-left: 15px;">
+                    <div class="tooltip-arrow"></div>
+                    <div class="tooltip-inner">Include</div>
+                </div>
+            </div>
+        </div>
+        <div class="span5 panel palette-clouds">
+            <h3>Accessing the Libraries</h3>
+            <p class="lead">
+                The official PubNub JavaScript API is available most easily from our CDN. But the
+                beta WebRTC API is <a href="https://github.com/pubnub/webrtc">only available on GitHub</a>
+                at the moment due to its ongoing development and the rapidly changing nature of WebRTC itself.
+                <br />
+                <br />
+                To the left you can see how to include PubNub and the beta API. Note that
+                the normal PubNub include comes before you include the API you downloaded
+                from GitHub. This is to avoid any dependency issues.
+                <br />
+                <br />
+                And just in case you were wondering, we used a couple of other tools for mainly
+                UI work: <a target="_blank" href="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js">jQuery</a>
+                and <a target="_blank" href="http://underscorejs.org/underscore-min.js">underscore.js</a>.
+            </p>
+
+        </div>
+    </div>
+    <!------------------------------------------------------------------
+     ! HOW WE USE PUBNUB FOR SHARE SIGNALING, PRESENCE, AND WEBRTC API !
+     !------------------------------------------------------------------>
+    <div class="heading palette palette-wisteria">
+        <h2 class="page-title">Using the API</h2>
+    </div>
+    <div class="row-fluid">
+        <div class="span7 panel palette-clouds">
+        </div>
+        <div class="span5 panel palette-silver">
+        </div>
+    </div>
+    <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+</body>
+</html>

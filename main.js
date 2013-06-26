@@ -112,9 +112,6 @@
                 $.ajax(req).done(handleRes);
             },
 
-            /**
-                "Signals" are sent via PubNub until the DataChannel is established
-             **/
             handleSignal: function (msg) {
                 var self = this;
                 // Don't care about messages we send
