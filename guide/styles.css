@@ -6,6 +6,14 @@
 
 pre {
     border-radius: 0;
+    /*min-width: 390px;*/
+    display: inline-block;
+    vertical-align: top;
+}
+
+pre.prettyprint {
+    margin-bottom: 0;
+    text-align: left;
 }
 
 /****************************
@@ -80,7 +88,7 @@ pre {
 }
 
 .video-container {
-    height: 650px;
+    height: 550px;
     width: 100%;
 }
 
@@ -89,9 +97,13 @@ pre {
     color: white;
     width: 40px;
     height: 40px;
-    display: table-cell;
     font-weight: bold;
     text-align: center;
+    vertical-align: middle;
+    margin: 0px;
+    padding: 0px;
+}
+.step-num span {
     vertical-align: middle;
 }
 
@@ -101,10 +113,16 @@ pre.numbered {
 /***************************
  * Single Elements
  ***************************/
-#git-page-img {
-    width: 75%;
-    height: auto;
+#git-page-img-cont {
+    width: 90%;
+    height: 200px;
     border: 1px solid rgb(83, 83, 83);
+    background-image: url('img/webrtc-git-page.png');
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    -webkit-background-size: cover;
+    background-size: cover;
+    display: inline-block;
 }
 
 #usageList {
