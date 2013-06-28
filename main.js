@@ -117,15 +117,7 @@
                 // Don't care about messages we send
                 if (msg.uuid !== this.uuid && msg.target === this.uuid) {
                     var targetConnection = self.connections[msg.uuid];
-                    if (msg.desc) {
-                        targetConnection.receiveDesc(msg);
-                    }
-                    else if (msg.candidate) {
-                        targetConnection.receiveICE(msg.candidate);
-                    }
-                    else {
-                        targetConnection.handleSignal(msg);
-                    }
+                    targetConnection.handleSignal(msg);
                 }
             },
 

@@ -13,10 +13,10 @@
         CANCEL: "cancel"
     };
     var IS_CHROME = !!window.webkitRTCPeerConnection;
-    var MAX_FSIZE = 200;    // MiB -- browser will crash when trying to bring more than that into memory
+    var MAX_FSIZE = 160;    // MiB -- browser will crash when trying to bring more than that into memory
 
     function Connection(email, element, uuid, pubnub) {
-        this.email = email;
+        this.id = email;
         this.element = element;
         this.fileInput = element.querySelector("input");
         this.getButton = element.querySelector(".get");
@@ -51,7 +51,7 @@
             this.connected = true;
             var msg = {
                 uuid: this.uuid,
-                target: this.email,
+                target: this.id,
                 fName: this.fileManager.fileName,
                 fType: this.fileManager.fileType,
                 nChunks: this.fileManager.fileChunks.length,
@@ -71,7 +71,7 @@
                 channel: protocol.CHANNEL,
                 message: {
                     uuid: this.uuid,
-                    target: this.email,
+                    target: this.id,
                     action: protocol.ANSWER
                 }
             });
@@ -81,7 +81,7 @@
 
         send: function (data) {
             this.pubnub.publish({
-                user: this.email,
+                user: this.id,
                 message: data
             });
         },
@@ -109,7 +109,6 @@
         },
 
         handleSignal: function (msg) {
-            //console.log(msg);
             if (msg.action === protocol.ANSWER) {
                 console.log("THE OTHER PERSON IS READY");
                 this.p2pSetup();
@@ -118,7 +117,6 @@
                 // Someone is ready to send file data. Let user opt-in to receive file data
                 this.getButton.removeAttribute("disabled");
                 this.cancelButton.removeAttribute("disabled");
-                //this.fileInput.setAttribute("disabled", "disabled");
                 $(this.fileInput).addClass("hidden");
 
                 this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
@@ -127,11 +125,11 @@
                 this.statusBlink(true);
             }
             else if (msg.action === protocol.ERR_REJECT) {
-                alert("Unable to communicate with " + this.email);
+                alert("Unable to communicate with " + this.id);
                 this.reset();
             }
             else if (msg.action === protocol.CANCEL) {
-                alert(this.email + " cancelled the share.");
+                alert(this.id + " cancelled the share.");
                 this.reset();
             }
         },
@@ -154,7 +152,7 @@
                 this.fileInput.setAttribute("disabled", "disabled");
                 $(this.fileInput).addClass("hidden");
                 if (this.connected) {
-                    alert(this.email + " has canceled the share.");
+                    alert(this.id + " has canceled the share.");
                     this.reset();
                 }
                 var j = $(this.element);
@@ -165,16 +163,16 @@
         p2pSetup: function () {
             console.log("Setting up P2P...");
             this.pubnub.subscribe({
-                user: this.email,
-                callback: this.onChannelMessage
+                user: this.id,
+                callback: this.onP2PMessage
             });
             var self = this;
             this.pubnub.history({
-                user: this.email,
+                user: this.id,
                 callback: function (messages) {
                     console.log("History: " + messages);
                     messages = messages[0];
-                    messages.forEach(self.onChannelMessage);
+                    messages.forEach(self.onP2PMessage);
                 }
             });
             this.shareStart = Date.now();
@@ -182,7 +180,7 @@
 
         createChannelCallbacks: function () {
             var self = this;
-            this.onChannelMessage = function (data) {
+            this.onP2PMessage = function (data) {
                 console.log("P2P message: ", data.action);
                 if (data.action === protocol.DATA) {
                     self.fileManager.receiveChunk(data);
@@ -247,7 +245,7 @@
                     message: {
                         uuid: self.uuid,
                         action: protocol.CANCEL,
-                        target: self.email
+                        target: self.id
                     }
                 });
                 self.reset();
