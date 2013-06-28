@@ -27,6 +27,15 @@ footer, header, hgroup, menu, nav, section {
 
 body {
     line-height: 1;
+    overflow-x: hidden;
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    font-family: 'Telex', sans-serif;
+    font-weight: bold;
+    background-color: #EEEBE4;
 }
 
 ol, ul {
@@ -73,19 +82,8 @@ button {
     }
 /* End Global Components */
 
-body {
-    margin: 0px;
-    padding: 0px;
-    height: 100%;
-    width: 100%;
-    position: absolute;
-    font-family: 'Telex', sans-serif;
-    font-weight: bold;
-    background-color: #EEEBE4;
-}
-
 .title {
-    font-family: 'Permanent Marker', sans-serif;
+    font-family: 'Racing Sans One', sans-serif;
     font-weight: normal;
     font-size: 32px;
     display: block;
