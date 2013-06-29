@@ -93,6 +93,7 @@ pre {
 .video-container {
     height: 550px;
     width: 100%;
+    color: whitesmoke;
 }
 
 .step-num {
