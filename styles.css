@@ -86,7 +86,6 @@ button {
     font-family: 'Racing Sans One', sans-serif;
     font-weight: normal;
     font-size: 32px;
-    display: block;
     margin: 0 auto;
     padding-top: 15px;
     color: white;
@@ -147,6 +146,8 @@ button {
         margin-top: 15px;
         overflow: hidden;
         white-space: nowrap;
+        -ms-text-overflow: ellipsis;
+        -o-text-overflow: ellipsis;
         text-overflow: ellipsis;
     }
 
@@ -241,8 +242,16 @@ button {
 .confirm-name {
     font-size: 24px;
     text-decoration: none;
-    color: white;
+    color: #f3f3f3;
     display: none;
+    -moz-transition: color .5s;
+    -o-transition: color .5s;
+    -webkit-transition: color .5s;
+    transition: color .5s;
+}
+
+.confirm-name:hover {
+    color: white;
 }
 
 .byline {
