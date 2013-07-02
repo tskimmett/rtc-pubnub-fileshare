@@ -112,7 +112,7 @@
                 <p>
                     Here is a simple breakdown of how we're using PubNub in the demo:
                 </p>
-                <ol id="usageList" class="mar-bot">
+                <ol class="step-list mar-bot">
                     <li><span>Basic call to subscribe</span></li>
                     <li><span>Presence to see who is joining/leaving the sharing room</span></li>
                     <li><span>Callback for signals indicating someone wants to share a file</span></li>
@@ -212,14 +212,225 @@
         </div>
     </div>
     <!------------------------------------------------------------------
-     ! HOW WE USE PUBNUB FOR SHARE SIGNALING, PRESENCE, AND WEBRTC API !
+     ! TALK ABOUT FILEMANAGER AND HOW FILE DATA IS MANIPULATED         !
      !------------------------------------------------------------------>
     <div class="heading palette palette-pomegranate r-text">
         <h2 class="page-title">Handling File Data</h2>
     </div>
     <div class="row-fluid palette-silver">
-        <h1 class="panel">Coming soon...</h1>
+        <div class="span4 panel">
+            <h4>This is the <code>onchange</code> event handler for the file input:</h4>
+            <pre class="prettyprint h-fit">this.filePicked = function (e) {
+    var file = self.fileInput.files[0];
+    if (file) {
+        var mbSize = file.size / (1024 * 1024);
+        if (mbSize > MAX_FSIZE) {
+            alert("Your file is too big, sorry.");
+            // Reset file input
+        }
+        var reader = new FileReader();
+        reader.onloadend = function (e) {
+            if (reader.readyState == FileReader.DONE) {
+                self.fileManager.stageLocalFile(file.name, file.type, reader.result);
+                self.offerShare();
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+}</pre>
+        </div>
+        <div class="span3 panel palette-clouds">
+            <p class="mar-bot">
+                In order to help simplify the code, all of the logic for manipulating file data
+                is done inside the <code>FileManager</code>. Each connection with people listed
+                on the screen has its own FileManager which deals with setting up a local file for
+                sending over the wire, or piecing together file data sent from a remote partner.
+                <br />
+                <br />
+                The reason we need all of this code to break up the file into chunks and control how much
+                data is sent at a time is because the underlying RTCDataChannel has a limit on the size
+                of individual messages. The DataChannel is also not entirely reliable yet, so some file
+                chunks might get lost when trying to send them, in which case we have to resend them.
+                That's why we're following a request/response model for file chunks: the receiver knows
+                how many chunks are needed to build the file, then requests groups of chunks at a time
+                from the file owner.
+                <br />
+                <br />
+                Once the receiver actually has all of the file chunks, their FileManager just sticks
+                them into a <code>Blob</code> and uses an <code>objectURL</code> to download the
+                file from the browser.
+                <br />
+                <br />
+                Please browse through the code as well if you need more information about how
+                file data is handled and how the request/response system works.
+            </p>
+        </div>
+        <div class="span5 panel">
+            <h4>This function just splits the buffer created from the <code>File</code> into an array of equally sized chunks:</h4>
+            <pre class="prettyprint">stageLocalFile: function (fName, fType, buffer) {
+    this.fileName = fName;
+    this.fileType = fType;
+    this.buffer = buffer;
+    var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
+    this.fileChunks = new Array(nChunks);
+    var start;
+    for (var i = 0; i < nChunks; i++) {
+        start = i * this.chunkSize;
+        this.fileChunks[i] = buffer.slice(start, start + this.chunkSize);
+    }
+}</pre>
+            <div class="pull-right mar-bot">
+                <h4 class="mtl">Automatically download the file once all chunks are received:</h4>
+                <pre class="prettyprint">downloadFile: function () {
+    var blob = new Blob(this.fileChunks, { type: this.fileType });
+    var link = document.querySelector("#download");
+    link.href = window.URL.createObjectURL(blob);
+    link.download = this.fileName;
+    link.click();
+}</pre>
+            </div>
+        </div>
     </div>
+    <!------------------------------------------------------------------
+     ! BRIEFLY COVER HOW GOOGLE CONTACTS ARE INTEGRATED                !
+     !------------------------------------------------------------------>
+    <div class="heading palette palette-sun-flower">
+        <h2 class="page-title">Extras - Google Contacts</h2>
+    </div>
+    <div class="row-fluid palette-silver">
+        <div class="span3">
+            <div class="panel">
+                <p>
+                    As you probably noticed, we included the ability to use the demo by signing in
+                    to your Google account and share files with any of your Google contacts who
+                    have also signed into the demo.
+                    <br />
+                    <br />
+                    Here are the steps we followed to setup Google login via OAUTH2 in order to use the Contacts API:
+                </p>
+                <ol class="step-list">
+                    <li><span><a href="https://developers.google.com/google-apps/contacts/v3/#authorizing_requests_to_the_api_name_service" target="_blank">Enable API access by creating a client ID in the Google APIs Console</a></span></li>
+                    <li><span>Direct the user to the Google OAUTH2 request page</span></li>
+                    <li><span>Parse the auth token when the user is redirected back to your page</span></li>
+                    <li><span>Pull down contacts using Google's API</span></li>
+                </ol>
+            </div>
+        </div>
+        <div class="span9 row-fluid palette-asbestos">
+            <div class="span5 panel palette-concrete">
+                <h4>This will open the OAUTH2 page in the current tab:</h4>
+                <div class="step-num"><span>2</span></div>
+                <pre class="prettyprint">obtainGoogleToken: function () {
+        var params = {
+            response_type: "token",
+            client_id: "YOUR_CLIENT_ID",
+            redirect_uri: window.location.origin + window.location.pathname,
+            scope: CONTACT_API_URL
+        };
+        var query = [];
+        for (var p in params) {
+            query.push(p + "=" + encodeURIComponent(params[p]));
+        }
+        query = query.join("&");
+        window.open("https://accounts.google.com/o/oauth2/auth?" + query, "_self");
+    }</pre>
+                <h4 class="mtl">Check to see if the page is opening with a Google auth token in the URL:</h4>
+                <pre class="prettyprint">var params = {}, queryString = location.hash.substring(1),
+        regex = /([^&=]+)=([^&]*)/g, m;
+    while (m = regex.exec(queryString)) {
+        params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+    }
+
+    if (params.access_token) {
+        window.location.hash = "";
+        client.getContacts(params.access_token);
+        return;
+    }</pre>
+                <div style="margin-bottom: 4px;" class="step-num"><span>3</span></div>
+            </div>
+            <div class="span7 panel">
+                <h4>Call the Contacts API and process the results:</h4>
+                <pre class="prettyprint">getContacts: function (token) {
+        this.token = token;
+        var self = this;
+        var req = {
+            url: CONTACT_API_URL + "/contacts/default/full",
+            data: {
+                access_token: this.token,
+                v: 3.0,
+                alt: "json",
+                "max-results": 10000
+            }
+        };
+        var handleRes = function (res) {
+            var userEmail = res.feed.author[0].email["$t"].toLowerCase(),
+                contacts = res.feed.entry;
+            contacts.forEach(function (e) {
+                if (!e["gd$email"]) {
+                    return;
+                }
+                var contactEmail = e["gd$email"][0].address.toLowerCase();
+                if (userEmail === contactEmail) {
+                    return;
+                }
+                self.contactEmails[contactEmail] = true;
+                // Create a Connection for this contact and
+                // add them to the UI list
+            });
+        }
+        $.ajax(req).done(handleRes);
+    }</pre>
+                <div class="step-num"><span>4</span></div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="row-fluid palette-pomegranate">
+            <div class="span8 row-fluid">
+                <div id="wrapUp" class="span6 panel palette-belize-hole">
+                    <h3 class="footer-title">Wrap Up</h3>
+                    <p class="lead">
+                        Thanks for checking out our guide on using the PubNub WebRTC API and seeing how
+                        we built the PubShare demo. Hopefully you've learned some useful tips and are
+                        ready to get out there and make your own real-time application. If you have any
+                        questions also feel free to contact us in whatever way works best for you.
+                    </p>
+                </div>
+                <div class="span6 panel">
+                    <h3 class="footer-title">More with PubNub Real-time Network</h3>
+                    <p>
+                        Do you like this freebie?
+                        Want to get more stuff like this?<br>
+                        Subscribe to <a target="pntwitter" href="http://twitter.com/PubNub">@PubNub</a>
+                        news and updates to stay tuned on great designs.<br>
+                        <a target="signup" href="http://www.pubnub.com/free-trial">PubNub Real-Time Network</a>.
+                    </p>
+                    <p class="pvl">
+                        <a target="pntwitter2" href="http://twitter.com/PubNub">Tweet</a>
+                    </p>
+                </div>
+            </div>
+            <div class="span4 panel footer-banner">
+                <h3 class="footer-title">
+                    <span class="fui-chat emblem-footer"></span> PubNub Network
+                </h3>
+
+                <div class="row-margin-small">
+                    <a class="btn btn-large btn-block btn-info mbl" target="_blank" href="http://www.pubnub.com/free-trial">Try PubNub Today!</a>
+                </div>
+
+                <ul>
+                    <li>Core Building Blocks for Secure Real-Time</li>
+                    <li>A Lot of Useful Samples</li>
+                    <li>Real-Time on a Redundant, Global Network</li>
+                    <li>Rapid Development and On-Demand Scaling</li>
+                    <li>Drops into Mobile and Web by Default</li>
+                    <li>Over 50 Supported SDKs</li>
+                </ul>
+
+            </div>
+        </div>
+    </footer>
     <script src="google-code-prettify/prettify.js" onload="prettyPrint();"></script>
 </body>
 </html>
