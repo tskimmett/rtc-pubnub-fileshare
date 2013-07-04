@@ -1,5 +1,6 @@
 ﻿(function () {
     var HOSTED = window.location.protocol !== "file:";
+    // Easier than comparing string literals
     var protocol = {
         CHANNEL: "get-my-file2",
         OFFER: "offer",
