@@ -90,6 +90,7 @@
                             return;
                         }
                         email = e["gd$email"][0].address.toLowerCase();
+                        // Don't consider ourselves a contact
                         if (self.uuid === email) {
                             return;
                         }
