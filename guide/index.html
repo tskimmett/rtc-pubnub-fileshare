@@ -33,10 +33,8 @@
                 JavaScript API.
             </p>
         </div>
-        <div class="span7 panel palette-wet-asphalt">
-            <div class="video-container centered c-text">
-                <h2>YouTube Video</h2>
-            </div>
+        <div class="span7 panel c-text" style="vertical-align: middle;">
+          <img src="http://blogly.pubnub.com/wp-content/uploads/2013/06/PubNubWebRTC.png" />
         </div>
     </div>
 
@@ -50,6 +48,7 @@
         <div class="span6 panel">
             <iframe class="app-frame" src="http://tskimmett.github.io/rtc-pubnub-fileshare" seamless="seamless"></iframe>
         </div>
+        <h3 class="c-text">Note: Google sign-in is disabled for the iframes.</h3>
     </div>
 
     <!-----------------------------------------------
@@ -185,26 +184,15 @@
                             Below you can see how we initiate the peer-to-peer connection for sending the actual
                         file data. Notice that the only difference from the normal PubNub subscribe is that
                         a <strong>user</strong> is specified instead of a normal <strong>channel</strong>.
-                        <br />
-                            <br />
-                            We still pull down history just to make sure we get any messages
-                        that might have been sent before we finished subscribing.
                         </p>
                         <div class="step-num"><span>4</span></div>
                         <pre class="h-fit prettyprint">p2pSetup: function () {
     console.log("Setting up P2P...");
+    this.shareStart = Date.now();
     this.pubnub.subscribe({
         user: this.id,  // Indicates P2P communication
         callback: this.onP2PMessage
     });
-    this.pubnub.history({
-        user: this.id,
-        callback: function (messages) {
-            messages = messages[0];
-            messages.forEach(this.onP2PMessage.bind(this));
-        }
-    });
-    this.shareStart = Date.now();
 }</pre>
                     </div>
                 </div>
