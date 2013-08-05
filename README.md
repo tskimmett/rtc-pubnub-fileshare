@@ -1,4 +1,4 @@
-rtc-pubnub-fileshare
+PubShare
 ====================
 This is a demo which allows users to share files with each other using Peer-to-peer connections via WebRTC DataChannel. All signaling and connection negotiation is accomplished using PubNub via their [beta WebRTC API](https://github.com/pubnub/webrtc).
 
