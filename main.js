@@ -4,7 +4,6 @@
         window.location.protocol = "https:"
     }
 
-    var peerTime = new PeerTime();
 
     var HOSTED = window.location.protocol !== "file:";
     // Easier than comparing string literals
@@ -22,7 +21,7 @@
 
     function createFSClient() {
         var CONTACT_API_URL = "https://www.google.com/m8/feeds";
-        var pubnub;
+        var pubnub, peerTime;
         function FSClient() {
             this.connections = {};
             this.contactEmails = {};
@@ -37,6 +36,7 @@
                     uuid: this.uuid,
                     ssl: true
                 });
+                peerTime = new PeerTime(pubnub);
 
                 $(".my-email").html(this.uuid);
 
@@ -83,6 +83,7 @@
                         uuid: self.uuid,
                         ssl: true
                     });
+                    peerTime = new PeerTime(pubnub);
 
                     pubnub.subscribe({
                         channel: protocol.CHANNEL,

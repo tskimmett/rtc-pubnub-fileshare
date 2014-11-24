@@ -1,13 +1,22 @@
-function PeerTime() {
+function PeerTime(pubnub) {
     this.drift = 0;
+    this.pubnub = pubnub;
     this.syncDrift();
+    //window.setInterval(Timeout(this.syncDrift, ;
 }
 
 PeerTime.prototype = {
-    syncDrift: function() {
-         // TODO use pubnub.time to sync ??
+    syncDrift: function () {
+        var self = this;
+        this.pubnub.time(
+            function (time) {
+                self.drift = time - new Date();
+            }
+        );
     },
     currTime: function () {
-        return new Date(); // TODO factor in drift
+        curr = new Date();
+        curr.setMilliseconds(curr.getMilliseconds() + this.drift);
+        return curr;
     }
-}
+};
