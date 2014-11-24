@@ -1,9 +1,10 @@
 function AudioManager() {
-    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.clips = [];
 }
 
 AudioManager.prototype = {
+    audioCtx: new (window.AudioContext || window.webkitAudioContext)(),
+
     addClip: function(arrayBuffer) {
         var source = this.audioCtx.createBufferSource();
         var self = this;

@@ -118,7 +118,7 @@ FileManager.prototype = {
         reader.onload = function(e) {
             loadCb(reader.result);
         };
-        return reader.readAsArrayBuffer(this.getBlob());
+        reader.readAsArrayBuffer(this.getBlob());
     },
 
     getBlob: function () {
