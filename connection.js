@@ -23,7 +23,6 @@
     this.getButton = element.querySelector(".get");
     this.cancelButton = element.querySelector(".cancel");
     this.progress = element.querySelector(".progress");
-    this.isInitiator = false;
     this.connected = false;
     this.shareStart = null;
     this.uuid = uuid;
@@ -84,6 +83,7 @@
 
     send: function (data) {
       this.pubnub.publish({
+        channel: protocol.CHANNEL,
         user: this.id,
         message: data
       });
@@ -167,6 +167,7 @@
       console.log("Setting up P2P...");
       this.shareStart = Date.now();
       this.pubnub.subscribe({
+        channel: protocol.CHANNEL,
         user: this.id,
         callback: this.onP2PMessage
       });
