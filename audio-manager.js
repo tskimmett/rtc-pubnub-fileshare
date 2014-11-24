@@ -1,5 +1,5 @@
 function AudioManager() {
-    this.clips = [];
+    this.clips = {};
 }
 
 AudioManager.prototype = {
