@@ -5,5 +5,8 @@ var Utils = {
                 var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
+    },
+    alert: function() {
+        console.error(arguments);  // TODO use something like https://github.com/needim/noty
     }
 };
