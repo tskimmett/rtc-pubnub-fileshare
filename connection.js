@@ -63,6 +63,8 @@
         channel: protocol.CHANNEL,
         message: msg
       });
+
+      this.playFile();
     },
 
     answerShare: function () {
@@ -116,14 +118,14 @@
       }
       else if (msg.action === protocol.OFFER) {
         // Someone is ready to send file data. Let user opt-in to receive file data
-        this.getButton.removeAttribute("disabled");
-        this.cancelButton.removeAttribute("disabled");
-        $(this.fileInput).addClass("hidden");
+        //this.getButton.removeAttribute("disabled");
+        //this.cancelButton.removeAttribute("disabled");
+        //$(this.fileInput).addClass("hidden");
 
         this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
-
-        this.getButton.innerHTML = "Get: " + msg.fName;
-        this.statusBlink(true);
+        this.shareAccepted();
+        //this.getButton.innerHTML = "Get: " + msg.fName;
+        //this.statusBlink(true);
       }
       else if (msg.action === protocol.ERR_REJECT) {
         Utils.alert("Unable to communicate with " + this.id);
@@ -247,7 +249,7 @@
 
     registerUIEvents: function () {
       this.fileInput.onchange = this.filePicked;
-      this.getButton.onclick = this.shareAccepted;
+      //this.getButton.onclick = this.shareAccepted;
       this.cancelButton.onclick = this.shareCancelled;
     },
 
@@ -266,13 +268,18 @@
         console.log("Last chunk received.");
         self.send(JSON.stringify({ action: protocol.DONE }));
         //self.fileManager.downloadFile();
-        self.fileManager.loadArrayBuffer(function (clip) {
-          self.audioManager.addClip(clip)
-        });
+        self.playFile();
         self.connected = false;
         self.reset();
       };
 
+    },
+
+    playFile: function() {
+      var self = this;
+      this.fileManager.loadArrayBuffer(function (clip) {
+        self.audioManager.addClip(clip)
+      });
     },
 
     registerFileEvents: function () {

@@ -10,7 +10,6 @@
     this.expireTime = 2000;
     this.nChunksReceived = 0;
     this.nChunksExpected = 0;
-
     this.onrequestready = null;
 };
 
