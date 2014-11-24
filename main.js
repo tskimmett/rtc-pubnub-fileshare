@@ -34,7 +34,8 @@
                 pubnub = PUBNUB.init({
                     publish_key: PUB_KEY,
                     subscribe_key: SUB_KEY,
-                    uuid: this.uuid
+                    uuid: this.uuid,
+                    ssl: true
                 });
 
                 $(".my-email").html(this.uuid);
@@ -79,7 +80,8 @@
                     pubnub = PUBNUB.init({
                         publish_key: PUB_KEY,
                         subscribe_key: SUB_KEY,
-                        uuid: self.uuid
+                        uuid: self.uuid,
+                        ssl: true
                     });
 
                     pubnub.subscribe({
