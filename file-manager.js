@@ -106,11 +106,23 @@ FileManager.prototype = {
     },
 
     downloadFile: function () {
-        var blob = new Blob(this.fileChunks, { type: this.fileType });
+        var blob = getBlob();
         var link = document.querySelector("#download");
         link.href = window.URL.createObjectURL(blob);
         link.download = this.fileName;
         link.click();
+    },
+
+    loadArrayBuffer: function (loadCb) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            loadCb(reader.result);
+        };
+        return reader.readAsArrayBuffer(this.getBlob());
+    },
+
+    getBlob: function () {
+        return new Blob(this.fileChunks, { type: this.fileType });
     },
 
     clear: function () {

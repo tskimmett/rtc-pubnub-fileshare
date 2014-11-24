@@ -27,7 +27,8 @@
     this.shareStart = null;
     this.uuid = uuid;
     this.pubnub = pubnub;
-    this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
+    this.fileManager = new FileManager((IS_CHROME ? 800 : 50000)); // TODO increase?
+    this.audioManager = new AudioManager();
 
     // Create event callbacks
     this.createChannelCallbacks();
@@ -264,7 +265,10 @@
       this.transferComplete = function () {
         console.log("Last chunk received.");
         self.send(JSON.stringify({ action: protocol.DONE }));
-        self.fileManager.downloadFile();
+        //self.fileManager.downloadFile();
+        self.fileManager.loadArrayBuffer(function (clip) {
+          self.audioManager.addClip(clip)
+        });
         self.connected = false;
         self.reset();
       };
@@ -279,7 +283,7 @@
 
     initProgress: function () {
       var self = this;
-      var ctx = ctx = this.progress.getContext('2d');
+      var ctx = this.progress.getContext('2d');
       var imd = null;
       var circ = Math.PI * 2;
       var quart = Math.PI / 2;

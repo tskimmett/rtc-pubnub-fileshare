@@ -25,8 +25,8 @@
             localLogin: function (name) {
                 this.uuid = name;
                 pubnub = PUBNUB.init({
-                    publish_key: 'pub-c-b2d901ee-2a0f-4d89-8cd3-63039aa6dd90',
-                    subscribe_key: 'sub-c-c74c7cd8-cc8b-11e2-a2ac-02ee2ddab7fe',
+                    publish_key: PUB_KEY,
+                    subscribe_key: SUB_KEY,
                     uuid: this.uuid
                 });
 
@@ -42,7 +42,7 @@
             obtainGoogleToken: function () {
                 var params = {
                     response_type: "token",
-                    client_id: "999382287610.apps.googleusercontent.com",
+                    client_id: "84873858196-sp4u8nbinq360u6pti0sqk745vu7547p.apps.googleusercontent.com", //TODO make work
                     redirect_uri: window.location.origin + window.location.pathname,
                     scope: CONTACT_API_URL
                 };
@@ -70,8 +70,8 @@
                     self.uuid = res.feed.author[0].email["$t"].toLowerCase();
                     $(".my-email").html(self.uuid);
                     pubnub = PUBNUB.init({
-                        publish_key: 'pub-c-b2d901ee-2a0f-4d89-8cd3-63039aa6dd90',
-                        subscribe_key: 'sub-c-c74c7cd8-cc8b-11e2-a2ac-02ee2ddab7fe',
+                        publish_key: PUB_KEY,
+                        subscribe_key: SUB_KEY,
                         uuid: self.uuid
                     });
 
@@ -157,6 +157,8 @@
         return new FSClient();
     };
 
+    var PUB_KEY = "pub-c-24cc8449-f45e-4bdf-97b5-c97bbb6479d0";
+    var SUB_KEY = "sub-c-60fc9a74-6f61-11e4-b563-02ee2ddab7fe";
 
     var client = createFSClient();
 
