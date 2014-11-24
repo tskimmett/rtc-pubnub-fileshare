@@ -14,9 +14,10 @@
 };
 
 FileManager.prototype = {
-    stageLocalFile: function (fName, fType, buffer) {
+    stageLocalFile: function (fName, fType, buffer, playTime) {
         this.fileName = fName;
         this.fileType = fType;
+        this.playTime = playTime;
         this.buffer = buffer;
         var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
         this.fileChunks = new Array(nChunks);
@@ -28,9 +29,10 @@ FileManager.prototype = {
         console.log("File data staged");
     },
 
-    stageRemoteFile: function (fName, fType, nChunks) {
+    stageRemoteFile: function (fName, fType, nChunks, playTime) {
         this.fileName = fName;
         this.fileType = fType;
+        this.playTime = playTime;
         this.fileChunks = [];
         this.missingChunks = [];
         this.numRequested = 0;

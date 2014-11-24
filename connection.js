@@ -15,7 +15,8 @@
   var IS_CHROME = !!window.webkitRTCPeerConnection;
   var MAX_FSIZE = 160;    // MiB -- browser will crash when trying to bring more than that into memory
 
-  function Connection(email, element, uuid, pubnub) {
+  function Connection(email, element, uuid, pubnub, peerTime) {
+    this.peerTime = peerTime;
     this.id = email;
     this.element = element;
     this.fileInput = element.querySelector("input");
@@ -28,7 +29,7 @@
     this.uuid = uuid;
     this.pubnub = pubnub;
     this.fileManager = new FileManager((IS_CHROME ? 800 : 50000)); // TODO increase?
-    this.audioManager = new AudioManager();
+    this.audioManager = new AudioManager(this.peerTime);
 
     // Create event callbacks
     this.createChannelCallbacks();
@@ -56,15 +57,14 @@
         fName: this.fileManager.fileName,
         fType: this.fileManager.fileType,
         nChunks: this.fileManager.fileChunks.length,
-        action: protocol.OFFER
+        action: protocol.OFFER,
+        playTime: this.fileManager.playTime
       };
 
       this.pubnub.publish({
         channel: protocol.CHANNEL,
         message: msg
       });
-
-      this.playFile();
     },
 
     answerShare: function () {
@@ -122,7 +122,7 @@
         //this.cancelButton.removeAttribute("disabled");
         //$(this.fileInput).addClass("hidden");
 
-        this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
+        this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks, new Date(msg.playTime));
         this.shareAccepted();
         //this.getButton.innerHTML = "Get: " + msg.fName;
         //this.statusBlink(true);
@@ -214,7 +214,8 @@
           var reader = new FileReader();
           reader.onloadend = function (e) {
             if (reader.readyState == FileReader.DONE) {
-              self.fileManager.stageLocalFile(file.name, file.type, reader.result);
+              self.fileManager.stageLocalFile(file.name, file.type, reader.result, self.peerTime.currTime());
+              self.playFile();
               self.fileInput.setAttribute("disabled", "disabled");
               self.getButton.setAttribute("disabled", "disabled");
               self.cancelButton.removeAttribute("disabled");
@@ -276,10 +277,7 @@
     },
 
     playFile: function() {
-      var self = this;
-      this.fileManager.loadArrayBuffer(function (clip) {
-        self.audioManager.addClip(clip)
-      });
+      this.audioManager.addClip(this.fileManager);
     },
 
     registerFileEvents: function () {

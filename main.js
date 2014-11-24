@@ -1,4 +1,11 @@
 ﻿(function () {
+    var HOST = "markulrich.github.io"
+    if (window.location.host == HOST && window.location.protocol != "https:") {
+        window.location.protocol = "https:"
+    }
+
+    var peerTime = new PeerTime();
+
     var HOSTED = window.location.protocol !== "file:";
     // Easier than comparing string literals
     var protocol = {
@@ -101,7 +108,7 @@
                             list.append($(c));
                             self.connections[email] = new Connection(email,
                               document.getElementById("contact-" + email),
-                              self.uuid, pubnub);
+                              self.uuid, pubnub, peerTime);
                             numShown++;
                         }
                     });
@@ -136,7 +143,7 @@
                     list.prepend($(template({ email: email, available: true })));
                     this.connections[email] = new Connection(email,
                       document.getElementById("contact-" + email),
-                      this.uuid, pubnub);
+                      this.uuid, pubnub, peerTime);
                     this.connections[email].handlePresence(msg);
                 }
                 else if (!USING_GOOGLE && msg.uuid !== this.uuid && msg.uuid.indexOf("@") == -1 && msg.action === "join") {
@@ -148,7 +155,7 @@
                               );
                     this.connections[email] = new Connection(email,
                         document.getElementById("contact-" + email),
-                        this.uuid, pubnub);
+                        this.uuid, pubnub, peerTime);
                     this.connections[email].handlePresence(msg);
                     $(".contact-list").animate({ marginTop: "35px" }, 700);
                 }
