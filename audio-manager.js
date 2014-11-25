@@ -13,7 +13,6 @@ AudioManager.prototype = {
             self.audioCtx.decodeAudioData(arrayBuffer, function (buffer) {
                 source.buffer = buffer;
                 source.connect(self.audioCtx.destination);
-                debugger;
                 var diff = (self.peerTime.currTime() - fileManager.playTime) / 1000;
                 //t = self.peerTime.currTime();
                 //p = fileManager.playTime; TODO

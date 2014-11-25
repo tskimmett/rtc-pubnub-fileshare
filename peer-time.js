@@ -1,22 +1,35 @@
 function PeerTime(pubnub) {
-    this.drift = 0;
+    this.drifts = [];
     this.pubnub = pubnub;
-    this.syncDrift();
-    //window.setInterval(Timeout(this.syncDrift, ;
+    var self = this;
+    window.setInterval(function() {
+        self.syncDrift();
+    }, 1000);
 }
 
 PeerTime.prototype = {
     syncDrift: function () {
         var self = this;
+        var tripStartTime = new Date();
         this.pubnub.time(
             function (time) {
-                self.drift = time - new Date();
+                var tripEndTime = new Date();
+                var currDrift = time / 10000 - (tripEndTime - tripStartTime) / 2 - new Date();
+                self.drifts.push(currDrift); //TODO use O(1) memory moving average.
             }
         );
     },
     currTime: function () {
         curr = new Date();
-        curr.setMilliseconds(curr.getMilliseconds() + this.drift);
+        drift = 0;
+        var len = this.drifts.length;
+        for (var i = 0; i < len; i++) {
+            drift += this.drifts[i];
+        }
+        drift /= len;
+        console.log('TODO Drifts are', this.drifts);
+        curr.setMilliseconds(curr.getMilliseconds() + drift);
+        console.log('Currtime with drift', drift, 'is', curr);
         return curr;
     }
 };
