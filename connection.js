@@ -15,19 +15,20 @@
   var IS_CHROME = !!window.webkitRTCPeerConnection;
   var MAX_FSIZE = 160;    // MiB -- browser will crash when trying to bring more than that into memory
 
-  function Connection(email, element, uuid, pubnub) {
+  function Connection(email, element, uuid, pubnub, peerTime) {
+    this.peerTime = peerTime;
     this.id = email;
     this.element = element;
     this.fileInput = element.querySelector("input");
     this.getButton = element.querySelector(".get");
     this.cancelButton = element.querySelector(".cancel");
     this.progress = element.querySelector(".progress");
-    this.isInitiator = false;
     this.connected = false;
     this.shareStart = null;
     this.uuid = uuid;
     this.pubnub = pubnub;
-    this.fileManager = new FileManager((IS_CHROME ? 800 : 50000));
+    this.fileManager = new FileManager((IS_CHROME ? 800 : 50000)); // TODO increase?
+    this.audioManager = new AudioManager(this.peerTime);
 
     // Create event callbacks
     this.createChannelCallbacks();
@@ -55,7 +56,8 @@
         fName: this.fileManager.fileName,
         fType: this.fileManager.fileType,
         nChunks: this.fileManager.fileChunks.length,
-        action: protocol.OFFER
+        action: protocol.OFFER,
+        playTime: this.fileManager.playTime
       };
 
       this.pubnub.publish({
@@ -81,6 +83,7 @@
 
     send: function (data) {
       this.pubnub.publish({
+        channel: protocol.CHANNEL,
         user: this.id,
         message: data
       });
@@ -115,21 +118,21 @@
       }
       else if (msg.action === protocol.OFFER) {
         // Someone is ready to send file data. Let user opt-in to receive file data
-        this.getButton.removeAttribute("disabled");
-        this.cancelButton.removeAttribute("disabled");
-        $(this.fileInput).addClass("hidden");
+        //this.getButton.removeAttribute("disabled");
+        //this.cancelButton.removeAttribute("disabled");
+        //$(this.fileInput).addClass("hidden");
 
-        this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks);
-
-        this.getButton.innerHTML = "Get: " + msg.fName;
-        this.statusBlink(true);
+        this.fileManager.stageRemoteFile(msg.fName, msg.fType, msg.nChunks, new Date(msg.playTime));
+        this.shareAccepted();
+        //this.getButton.innerHTML = "Get: " + msg.fName;
+        //this.statusBlink(true);
       }
       else if (msg.action === protocol.ERR_REJECT) {
-        alert("Unable to communicate with " + this.id);
+        Utils.alert("Unable to communicate with " + this.id);
         this.reset();
       }
       else if (msg.action === protocol.CANCEL) {
-        alert(this.id + " cancelled the share.");
+        Utils.alert(this.id + " cancelled the share.");
         this.reset();
       }
     },
@@ -152,7 +155,7 @@
         this.fileInput.setAttribute("disabled", "disabled");
         $(this.fileInput).addClass("hidden");
         if (this.connected) {
-          alert(this.id + " has canceled the share.");
+          Utils.alert(this.id + " has canceled the share.");
           this.reset();
         }
         var j = $(this.element);
@@ -164,6 +167,7 @@
       console.log("Setting up P2P...");
       this.shareStart = Date.now();
       this.pubnub.subscribe({
+        channel: protocol.CHANNEL,
         user: this.id,
         callback: this.onP2PMessage
       });
@@ -187,7 +191,7 @@
         else if (data.action === protocol.DONE) {
           self.connected = false;
           self.reset();
-          alert("Share took " + ((Date.now() - self.shareStart) / 1000) + " seconds");
+          Utils.alert("Share took " + ((Date.now() - self.shareStart) / 1000) + " seconds");
         }
       };
     },
@@ -199,7 +203,7 @@
         if (file) {
           var mbSize = file.size / (1024 * 1024);
           if (mbSize > MAX_FSIZE) {
-            alert("Due to browser memory limitations, files greater than " + MAX_FSIZE + " MiB are unsupported. Your file is " + mbSize.toFixed(2) + " MiB.");
+            Utils.alert("Due to browser memory limitations, files greater than " + MAX_FSIZE + " MiB are unsupported. Your file is " + mbSize.toFixed(2) + " MiB.");
             var newInput = document.createElement("input");
             newInput.type = "file";
             newInput.className = "share";
@@ -211,7 +215,8 @@
           var reader = new FileReader();
           reader.onloadend = function (e) {
             if (reader.readyState == FileReader.DONE) {
-              self.fileManager.stageLocalFile(file.name, file.type, reader.result);
+              self.fileManager.stageLocalFile(file.name, file.type, reader.result, self.peerTime.currTime());
+              self.playFile();
               self.fileInput.setAttribute("disabled", "disabled");
               self.getButton.setAttribute("disabled", "disabled");
               self.cancelButton.removeAttribute("disabled");
@@ -246,7 +251,7 @@
 
     registerUIEvents: function () {
       this.fileInput.onchange = this.filePicked;
-      this.getButton.onclick = this.shareAccepted;
+      //this.getButton.onclick = this.shareAccepted;
       this.cancelButton.onclick = this.shareCancelled;
     },
 
@@ -264,11 +269,16 @@
       this.transferComplete = function () {
         console.log("Last chunk received.");
         self.send(JSON.stringify({ action: protocol.DONE }));
-        self.fileManager.downloadFile();
+        //self.fileManager.downloadFile();
+        self.playFile();
         self.connected = false;
         self.reset();
       };
 
+    },
+
+    playFile: function() {
+      this.audioManager.addClip(this.fileManager);
     },
 
     registerFileEvents: function () {
@@ -279,7 +289,7 @@
 
     initProgress: function () {
       var self = this;
-      var ctx = ctx = this.progress.getContext('2d');
+      var ctx = this.progress.getContext('2d');
       var imd = null;
       var circ = Math.PI * 2;
       var quart = Math.PI / 2;

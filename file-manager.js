@@ -10,14 +10,14 @@
     this.expireTime = 2000;
     this.nChunksReceived = 0;
     this.nChunksExpected = 0;
-
     this.onrequestready = null;
 };
 
 FileManager.prototype = {
-    stageLocalFile: function (fName, fType, buffer) {
+    stageLocalFile: function (fName, fType, buffer, playTime) {
         this.fileName = fName;
         this.fileType = fType;
+        this.playTime = playTime;
         this.buffer = buffer;
         var nChunks = Math.ceil(buffer.byteLength / this.chunkSize);
         this.fileChunks = new Array(nChunks);
@@ -29,9 +29,10 @@ FileManager.prototype = {
         console.log("File data staged");
     },
 
-    stageRemoteFile: function (fName, fType, nChunks) {
+    stageRemoteFile: function (fName, fType, nChunks, playTime) {
         this.fileName = fName;
         this.fileType = fType;
+        this.playTime = playTime;
         this.fileChunks = [];
         this.missingChunks = [];
         this.numRequested = 0;
@@ -106,11 +107,23 @@ FileManager.prototype = {
     },
 
     downloadFile: function () {
-        var blob = new Blob(this.fileChunks, { type: this.fileType });
+        var blob = getBlob();
         var link = document.querySelector("#download");
         link.href = window.URL.createObjectURL(blob);
         link.download = this.fileName;
         link.click();
+    },
+
+    loadArrayBuffer: function (loadCb) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            loadCb(reader.result);
+        };
+        reader.readAsArrayBuffer(this.getBlob());
+    },
+
+    getBlob: function () {
+        return new Blob(this.fileChunks, { type: this.fileType });
     },
 
     clear: function () {
