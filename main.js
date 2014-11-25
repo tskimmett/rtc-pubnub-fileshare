@@ -172,58 +172,7 @@
 
     var client = createFSClient();
 
-    var confirm = $(".confirm-name");
-    var confirmArea = $(".confirm-name-area");
-    var input = $(".name-input");
-    var googleLogin = $("#google-login-button");
 
-    confirm.hover(function () {
-        confirm.stop();
-        confirm.animate({ color: "#669999" }, 300);
-    }, function () {
-        confirm.stop();
-        confirm.animate({ color: "white" }, 300);
-    });
-
-    confirm.click(function () {
-        $(".login-area").fadeOut();
-        client.localLogin(input.val().replace(/^\s\s*/, '').replace(/\s\s*$/, ''));
-    });
-
-    input.on("keyup", function (e) {
-        if (e.which === 13) {
-            confirm.click();
-        }
-    });
-
-    input.on("input", function () {
-        var curr = $(this).val(),
-            split = curr.split(/\s/);
-        for (var i = 0, len = split.length; i < len; i++) {
-            split[i] = split[i].replace(/\W/g, "");
-        }
-        curr = split.join(" ");
-        $(this).val(curr);
-        if (curr.length > 2 && curr.length < 20) {
-            if (curr.length >= 3 || curr.length <= 19) {
-                if (confirmArea.height() != 38) {
-                    confirm.fadeIn();
-                    confirmArea.animate({ height: "38px" }, 300);
-                }
-            }
-        }
-        else {
-            if (confirmArea.height() != 0) {
-                confirm.fadeOut();
-                confirmArea.animate({ height: "0px" }, 300);
-            }
-        }
-    });
-
-    googleLogin.click(function (event) {
-        client.obtainGoogleToken();
-        USING_GOOGLE = true;
-    });
 
     // First, parse the query string
     var params = {}, queryString = location.hash.substring(1),
