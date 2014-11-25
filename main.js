@@ -50,7 +50,7 @@
             obtainGoogleToken: function () {
                 var params = {
                     response_type: "token",
-                    client_id: "84873858196-sp4u8nbinq360u6pti0sqk745vu7547p.apps.googleusercontent.com", //TODO make work
+                    client_id: "84873858196-sp4u8nbinq360u6pti0sqk745vu7547p.apps.googleusercontent.com",
                     redirect_uri: window.location.origin + window.location.pathname,
                     scope: CONTACT_API_URL
                 };
