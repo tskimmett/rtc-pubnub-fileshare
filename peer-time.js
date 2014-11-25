@@ -27,13 +27,14 @@ PeerTime.prototype = {
                 var timeMs = timeIn10thOfNs / TENTHS_OF_NANOSECOND_PER_MILLISECOND;
                 var estimatedTimeFromServer = (currTime - tripStartTime) / 2;
                 var currDrift = timeMs - estimatedTimeFromServer - currTime;
-                if (this.mode == 'array') {
-                    this.drifts.push(currDrift);
-                } else if (this.mode == 'exponential') {
-                    var percPrevToUse = Math.max(1.0 - self.numSyncs / (self.numSyncs + 1), 0.1);
-                    this.drift = percPrevToUse * this.drift + (1 - percPrevToUse) * currDrift;
+                // TODO think about how to remove outliers.
+                if (self.mode == 'array') {
+                    self.drifts.push(currDrift);
+                } else if (self.mode == 'exponential') {
+                    var percPrevToUse = Math.min(self.numSyncs / (self.numSyncs + 1.0), 0.9);
+                    self.drift = percPrevToUse * self.drift + (1.0 - percPrevToUse) * currDrift;
                 } else {
-                    throw new Error('Invalid mode', this.mode);
+                    throw new Error('Invalid mode', self.mode);
                 }
                 self.numSyncs++;
             }

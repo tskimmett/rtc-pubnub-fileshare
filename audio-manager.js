@@ -14,9 +14,6 @@ AudioManager.prototype = {
                 source.buffer = buffer;
                 source.connect(self.audioCtx.destination);
                 var diff = (self.peerTime.currTime() - fileManager.playTime) / 1000;
-                //t = self.peerTime.currTime();
-                //p = fileManager.playTime; TODO
-                //debugger;
                 if (diff >= 0) {
                     console.log('Staring playback at', diff);
                     source.start(0, diff);
