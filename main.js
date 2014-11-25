@@ -165,14 +165,31 @@
             }
         };
         return new FSClient();
-    };
+    }
 
     var PUB_KEY = "pub-c-24cc8449-f45e-4bdf-97b5-c97bbb6479d0";
     var SUB_KEY = "sub-c-60fc9a74-6f61-11e4-b563-02ee2ddab7fe";
 
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function capitalize(s) {
+        return _.map(s.split(" "), function(w) {
+            return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        }).join(" ");
+    }
+
     var client = createFSClient();
-
-
+    var animals = $.get("/animals.json");
+    var adjectives = $.get("/adjectives.json");
+    $.when(animals, adjectives).done(function(animals, adjectives) {
+        animals = animals[0];
+        adjectives = adjectives[0];
+        var animal = animals[randomInt(0, animals.length)];
+        var adjective = adjectives[randomInt(0, adjectives.length)];
+        client.localLogin(capitalize(adjective + " " + animal));
+    });
 
     // First, parse the query string
     var params = {}, queryString = location.hash.substring(1),
